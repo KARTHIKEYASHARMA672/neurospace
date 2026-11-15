@@ -73,72 +73,58 @@ async function run() {
     page.on('pageerror', (err) => console.error('Page error:', err.message));
 
     await page.goto(BASE, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(3000); // boot animation & 3D warmup
+    await page.waitForTimeout(4500); // Wait for Z-Anatomy 3D models to finish loading into WebGL
 
-    // 01 — Full Body 3D Overview: Spinal Cord & Plexus Network
-    await saveShot(page, '01_fullbody_nervous_system_overview.png');
+    // 01 — X-Ray Multi-System Composite (Skeleton + Organs + Muscular + Skin)
+    await saveShot(page, '01_humanome_xray_multisystem_composite.png');
 
-    // 02 — Peripheral Nervous System & Brachial / Sciatic Inspection
-    await page.locator('button:has-text("Nervous System")').first().click();
+    // 02 — Skeletal System Isolation & Mineral Matrix
+    const muscBtn = page.locator('button[title*="Hide System Layer"]').nth(1);
+    if (await muscBtn.isVisible()) await muscBtn.click();
+    const skinBtn = page.locator('button[title*="Hide System Layer"]').nth(4);
+    if (await skinBtn.isVisible()) await skinBtn.click();
+    await page.waitForTimeout(1000);
+    await saveShot(page, '02_skeletal_axial_appendicular_system.png');
+
+    // 03 — Cardiovascular Angiography & Deep Circulation Network
+    await page.locator('button:has-text("PHOTOREAL")').first().click();
     await page.waitForTimeout(1200);
-    // Click on Sciatic Nerve in the list
-    const sciaticBtn = page.locator('button:has-text("Sciatic Nerve")').first();
-    if (await sciaticBtn.isVisible()) {
-      await sciaticBtn.click();
-      await page.waitForTimeout(1000);
-    }
-    await saveShot(page, '02_peripheral_nerves_sciatic_detail.png');
+    await saveShot(page, '03_cardiovascular_arterial_photoreal.png');
 
-    // 03 — Visceral & Autonomic Organs ("Second Brain" & Cardiac Plexus)
-    const organsPill = page.locator('button:has-text("Organs & Plexus")').first();
-    if (await organsPill.isVisible()) {
-      await organsPill.click();
-      await page.waitForTimeout(800);
-    }
-    const entericBtn = page.locator('button:has-text("Enteric Nervous System")').first();
-    if (await entericBtn.isVisible()) {
-      await entericBtn.click();
-      await page.waitForTimeout(1000);
-    }
-    await saveShot(page, '03_autonomic_visceral_second_brain.png');
+    // 04 — Computed Tomography (CT) Radiological Scan Mode
+    await page.locator('button:has-text("CT")').first().click();
+    await page.waitForTimeout(1000);
+    await saveShot(page, '04_computed_tomography_radiological_ct.png');
 
-    // 04 — Cutaneous Integumentary & Dermatome Segmental Mapping (C2–S5)
-    const dermPill = page.locator('button:has-text("Dermatomes C2–S5")').first();
-    if (await dermPill.isVisible()) {
-      await dermPill.click();
-      await page.waitForTimeout(1000);
-    }
-    await saveShot(page, '04_skin_integumentary_dermatomes.png');
+    // 05 — Magnetic Resonance Imaging (MRI T2-Weighted Fluid Contrast)
+    await page.locator('button:has-text("MRI")').first().click();
+    await page.waitForTimeout(1000);
+    await saveShot(page, '05_magnetic_resonance_imaging_mri.png');
 
-    // 05 — Brain Focus 3D Mode & 12 Regional Cortical Territories
-    await page.locator('button:has-text("Brain Focus")').first().click();
-    await page.waitForTimeout(1500);
-    await saveShot(page, '05_brain_focus_cortical_atlas.png');
-
-    // 06 — Full Body Signal Cascade (Foot Stepping on Pin — Spinal Reflex & Pain)
-    await page.locator('button:has-text("Full Body 3D")').first().click();
-    await page.waitForTimeout(600);
+    // 06 — Full-Body Signal Propagation: Stepping on Pin (Spinal Reflex Arc)
+    await page.locator('button:has-text("XRAY")').first().click();
+    await page.waitForTimeout(500);
     await page.locator('nav button', { hasText: 'SIGNALS' }).first().click();
     await page.waitForTimeout(800);
     const fireBtn = page.getByRole('button', { name: 'Fire Full-Body Neural Circuit' }).first();
     if (await fireBtn.isVisible()) {
       await fireBtn.click();
-      await page.waitForTimeout(1800); // capture mid-conduction pulse
+      await page.waitForTimeout(1500);
     }
     await saveShot(page, '06_signal_propagation_spinal_reflex.png');
-    await page.waitForTimeout(4000); // let cascade settle
+    await page.waitForTimeout(3500);
 
-    // 07 — Living Neurological Pathologies & Scenarios
+    // 07 — Neurological Scenarios & Pathology Engine
     await page.locator('nav button', { hasText: 'SCENARIOS' }).first().click();
     await page.waitForTimeout(800);
     await saveShot(page, '07_neurological_scenarios_pathology.png');
 
-    // 08 — Live Telemetry, EEG Brainwave Power Bands & Neurotransmitter Matrix
+    // 08 — Live Telemetry & 60 Hz Fourier Power Bands
     await page.locator('nav button', { hasText: 'TELEMETRY' }).first().click();
     await page.waitForTimeout(1000);
     await saveShot(page, '08_live_eeg_telemetry_neurotransmitters.png');
 
-    console.log('🎉 All 8 high-resolution 3D visual artifacts captured successfully!');
+    console.log('🎉 All 8 medical-grade 3D visual artifacts captured successfully!');
     await browser.close();
   } catch (err) {
     console.error('Error during visual capture:', err);

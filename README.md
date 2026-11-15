@@ -1,6 +1,6 @@
-# 🧠 NEUROSPACE — Interactive 3D Human Nervous System, Brain & Full-Body Neural Architecture Simulator
+# 🫀 NEUROSPACE — Interactive 3D Humanome Anatomy & Neural Architecture Simulator
 
-> 📌 **Executive Overview:** **NEUROSPACE** is a high-craft 3D WebGL Virtual Simulator and Medical Neuroscience Engine exploring the complete human neural architecture: the **Central Nervous System (CNS)**, **Cerebrum & 12 Cortical Territories**, **Spinal Cord & Reflex Axis**, **Peripheral Nervous System (PNS & Somatosensory Plexuses)**, **Autonomic Visceral Networks ("Second Brain" & Cardiac Plexus)**, and the **Cutaneous Integumentary Envelope & Segmental Dermatomes (C2–S5)**. Featuring biophysical action potential signal propagation, living neurological pathology simulations, and an on-device **NeuroAI** anatomical tutor.
+> 📌 **Executive Summary:** **NEUROSPACE** is an enterprise-grade 3D WebGL Medical Atlas and Neural Architecture Simulator built on the official open-source **Z-Anatomy (BodyParts3D)** clinical coordinate system (referenced from Humanome). It delivers full-fidelity 3D exploration across all six human bodily systems — **Skeletal (206 articulated bones)**, **Muscular (400+ muscle groups)**, **Cardiovascular (systemic arterial & venous tree)**, **Visceral Organs (Liver Couinaud segments, Heart, Lungs, Kidneys, Pancreas, Stomach, Intestines)**, **Nervous (Cerebrum, 12 Cortical Territories, Spinal Axis, Brachial/Sciatic Plexuses)**, and **Integumentary Skin Envelope & Dermatomes (C2–S5)**. Supports 4 real-time radiological rendering modes (**X-Ray**, **Photoreal Standard**, **Computed Tomography CT**, and **Magnetic Resonance Imaging MRI**), live Hodgkin-Huxley biophysical action potential cascades, 8 clinical neurological pathologies, and an integrated **NeuroAI** clinical tutor.
 
 ---
 
@@ -8,12 +8,14 @@
 
 | Property | Value |
 | :--- | :--- |
-| **Project Title** | NEUROSPACE — 3D Human Nervous System & Anatomical Architecture |
-| **Version** | `2.0.0` Production Grade |
+| **Project Title** | NEUROSPACE — Interactive 3D Humanome Anatomy & Neural Simulator |
+| **Version** | `2.1.0` Production Grade |
 | **Workspace Directory** | `L:\pr 30(NEUROSPACE)` |
+| **Reference Architecture** | Humanome (`humanome.co`) / Z-Anatomy Clinical 3D Coordinate Standard |
 | **Primary Visual Palette** | **Midnight Indigo & Vanilla** (`#30356F` Midnight Indigo + `#FBF5E6` Vanilla Neutral + `#C9A961` Synaptic Gold + `#802838` Crimson Alert) via `colours for websites` skill |
-| **Frontend Stack** | React 19, TypeScript 5.8+, Vite 6, Tailwind CSS v3.4+, Three.js WebGL2 (`three@0.175.0`), Lucide Icons |
-| **Scientific Architecture** | Multi-Laminar Cortical Mapping, Hodgkin-Huxley-inspired Action Potential Propagation, Full-Body Plexus Hierarchy, Dermatome Topography (C2–S5), EEG Wavelet Spectrum (Delta to Gamma) |
+| **Frontend Stack** | React 19, TypeScript 5.8+, Vite 6, Tailwind CSS v3.4+, Three.js WebGL2 (`three@0.175.0`), GLTFLoader, Lucide Icons |
+| **3D Anatomical Assets** | 6 Sub-system Z-Anatomy GLBs (`z-skeleton.glb`, `z-organs.glb`, `z-muscular.glb`, `z-nervous.glb`, `z-cardiovascular.glb`, `z-skin.glb`) aligning to exact anatomical origin |
+| **Rendering Modes** | **X-Ray Multi-Layer Hologram**, **Photoreal Anatomical Standard**, **Computed Tomography (CT Radiographic)**, **Magnetic Resonance Imaging (MRI Tissue Contrast)** |
 | **Verified Verification Suite** | Playwright WebGL2 Chromium headless verification (`1600×900`), 0 console errors, 8/8 high-res state screenshots captured |
 | **Public GitHub Repository** | [`KARTHIKEYASHARMA672/neurospace`](https://github.com/KARTHIKEYASHARMA672/neurospace) (`main`) |
 | **Hosted Production URL** | [https://neurospace-3d.vercel.app](https://neurospace-3d.vercel.app) (HTTP 200 OK via Vercel) |
@@ -21,63 +23,89 @@
 
 ---
 
-## 🖼️ Verified Visual Verification Gallery
+## 🖼️ Verified Visual UI Gallery
 
-> 📸 *All 8 visual artifacts below are verified live screenshots rendered using Playwright WebGL Chromium headless suite (`1600×900`) against the production build.*
+> 📸 *All 8 visual artifacts below are verified live screenshots rendered using Playwright WebGL Chromium headless suite (`1600×900`) against the production deployment.*
 
-| 01 — Full-Body 3D Nervous System Overview | 02 — Peripheral Nervous System & Sciatic Detail |
+| 01 — Full Multi-System X-Ray Hologram | 02 — Skeletal System (Axial & Appendicular) |
 | :---: | :---: |
-| ![01 Full-Body Nervous System](./screenshots/01_fullbody_nervous_system_overview.png) | ![02 Peripheral Nerves Sciatic](./screenshots/02_peripheral_nerves_sciatic_detail.png) |
-| *Full 3D holographic human anatomical scaffold showing central spinal axis, cranial vault, and bilateral brachial/sciatic peripheral nerve trunks.* | *High-resolution inspection of the 2 cm caliber Sciatic Nerve (L4–S3), popliteal bifurcation, and lower limb motor-sensory distribution.* |
+| ![01 Multi-System X-Ray](./screenshots/01_humanome_xray_multisystem_composite.png) | ![02 Skeletal System](./screenshots/02_skeletal_axial_appendicular_system.png) |
+| *Composite multi-layer X-Ray view showing complete human skeletal frame, visceral organs (liver, lungs, heart, kidneys), and full muscular/vascular envelope.* | *Isolated skeletal view displaying 206 articulated bones: cranial vault, cervical-thoracic-lumbar spine, rib cage, and appendicular extremities.* |
 
-| 03 — Visceral & Autonomic Organs ("Second Brain") | 04 — Cutaneous Integumentary & Dermatomes (C2–S5) |
+| 03 — Cardiovascular & Arterial Network | 04 — Computed Tomography (CT) Mode |
 | :---: | :---: |
-| ![03 Autonomic Visceral](./screenshots/03_autonomic_visceral_second_brain.png) | ![04 Skin Integumentary Dermatomes](./screenshots/04_skin_integumentary_dermatomes.png) |
-| *Deep inspection of the Enteric Nervous System (ENS, 500M neurons), cardiac autonomic plexus, pulmonary bronchi, and renal-adrenal axes.* | *Translucent dermal boundary showing tactile mechanoreceptor fields and colored segmental dermatome rings (C2–S5).* |
+| ![03 Cardiovascular Network](./screenshots/03_cardiovascular_arterial_photoreal.png) | ![04 Computed Tomography CT](./screenshots/04_computed_tomography_radiological_ct.png) |
+| *High-definition vascular tree highlighting aortic arch, carotid bifurcation, coronary circulation, and systemic arterial/venous vasculature.* | *Radiographic bone density attenuation filter simulating medical CT scans with diagnostic high-contrast bone and soft-tissue absorption.* |
 
-| 05 — 3D Brain Focus & 12 Cortical Territories | 06 — Signal Propagation: Spinal Reflex Arc |
+| 05 — Magnetic Resonance Imaging (MRI) Mode | 06 — Signal Propagation: Spinal Reflex Arc |
 | :---: | :---: |
-| ![05 Brain Focus Atlas](./screenshots/05_brain_focus_cortical_atlas.png) | ![06 Signal Propagation](./screenshots/06_signal_propagation_spinal_reflex.png) |
-| *Dedicated macro view of the cerebral hemispheres with procedural sulci/gyri displacement and 12 glowing functional cortical regions.* | *Real-time action potential conduction: Foot stepping on pin triggering 15 ms polysynaptic spinal reflex + 200 ms spinothalamic pain ascent.* |
+| ![05 MRI Mode](./screenshots/05_magnetic_resonance_imaging_mri.png) | ![06 Signal Propagation](./screenshots/06_signal_propagation_spinal_reflex.png) |
+| *T1/T2 diagnostic tissue contrast shader emphasizing neural tracts, soft tissue margins, fluid boundaries, and internal visceral anatomy.* | *Live biophysical action potential cascade: noxious foot stimulus triggering 15 ms polysynaptic spinal withdrawal reflex & 200 ms spinothalamic pain ascent.* |
 
 | 07 — Neurological Scenarios & Pathology Engine | 08 — Live Telemetry, EEG Power Bands & Neurotransmitters |
 | :---: | :---: |
 | ![07 Neurological Scenarios](./screenshots/07_neurological_scenarios_pathology.png) | ![08 Live Telemetry](./screenshots/08_live_eeg_telemetry_neurotransmitters.png) |
-| *8 simulated clinical states (Epilepsy, Alzheimers, Parkinsons, Ischemic Stroke, Acute Stress, NREM Sleep, Zen Meditation).* | *Real-time 60 Hz synthetic EEG waveform monitor, 5 Fourier frequency bands (Delta to Gamma), and 6 core neurotransmitter gauges.* |
+| *Interactive simulation of 8 clinical pathologies including Temporal Lobe Epilepsy, Alzheimer's Neurodegeneration, Parkinson's Tremor, and Ischemic Stroke.* | *Continuous 60 Hz synthetic EEG oscilloscope with 5 Fourier spectral bands (Delta to Gamma) and 6 clinical neurotransmitter concentration gauges.* |
 
 ---
 
-## 🔬 Core Anatomical Systems & Technical Architecture
+## 🫀 Complete Human Body Systems & Organs Index
 
-### 1. Central Nervous System (CNS) & Brain Regional Atlas
-- **12 Cortical & Subcortical Territories:** Prefrontal Cortex, Primary Motor Strip, Somatosensory Cortex, Parietal Association, Occipital Visual Area (V1), Temporal Lobe, Wernicke Area, Broca Center, Hippocampus, Amygdala, Cerebellum (69B neurons), and Medullary Brainstem.
-- **Micro-Displaced Procedural Shaders:** Deterministic 4-octave sinusoidal gyri noise sculpting natural anatomical sulcal fissures and longitudinal cerebral cleavage.
-- **Bilateral Coordinate Mapping:** Calibrated 3D anchor positions with dynamic normal-oriented surface flares and billboarded internal deep nuclei.
+NEUROSPACE models the entire human physiology using clinical 3D coordinate alignments inspired by Z-Anatomy and Humanome:
 
-### 2. Peripheral Nervous System (PNS) & Major Nerve Trunks
-- **Spinal Cord & Cauda Equina:** 31 pairs of spinal roots with segmental exit vectors (C1–S5), intermediolateral autonomic columns, and descending corticospinal motor tracts.
-- **Brachial Plexus Highway (C5–T1):** Roots, trunks, divisions, cords, and terminal branches including the Radial Nerve (extensor compartment & spiral groove) and Median Nerve (carpal tunnel & precision pinch).
-- **Lumbosacral Trunk & Lower Limb:** Femoral Nerve (quadriceps & patellar reflex arc), Sciatic Nerve (2 cm caliber main trunk), and Tibial / Peroneal branches governing plantar push-off and dorsiflexion clearance.
+### 1. Visceral & Internal Organs Index (`z-organs.glb`)
+- **Liver & Biliary Tree:** Complete 8 Couinaud segments, portal venous inflow, hepatic veins, and green-pigmented Gallbladder.
+- **Heart & Great Vessels:** Four cardiac chambers (Atria & Ventricles), ascending/descending aorta, pulmonary trunk, and coronary sulci.
+- **Lungs & Respiratory Tree:** Bilateral lungs with right 3-lobed (superior, middle, inferior) and left 2-lobed morphology, primary bronchi, and tracheal cartilages.
+- **Kidneys & Urinary Tract:** Bilateral retroperitoneal kidneys, renal cortex/medulla, ureteral conduits, and urinary bladder.
+- **Pancreas & Gastrointestinal Duct:** Endocrine islets and exocrine acini nestled along the C-loop of the duodenum.
+- **Stomach & Spleen:** J-shaped gastric reservoir, gastroesophageal junction, pyloric sphincter, and splenic lymphoid parenchyma.
+- **Intestinal Tract:** Duodenum, jejunum, ileum, ascending/transverse/descending colon, and sigmoid rectum.
+- **Endocrine Glands:** Thyroid gland over the thyroid cartilage and bilateral adrenal suprarenal caps.
 
-### 3. Autonomic Nervous System & Visceral Organs ("Second Brain")
-- **Enteric Nervous System (ENS):** 500 million neurons coordinating gastrointestinal peristalsis, secretomotor fluid flux, and synthesizing >90% of bodily serotonin (5-HT).
-- **Cardiac Autonomic Plexus:** Dual adrenergic / vagal muscarinic modulation of the sinoatrial pacemaker and ventricular inotropy.
-- **Pulmonary & Splanchnic Hubs:** Bronchomotor tone regulation, Hering-Breuer stretch protective reflexes, and celiac plexus sympathetic vasoconstriction.
-- **Sympathoadrenal Axis:** Adrenal chromaffin cells discharging epinephrine and norepinephrine for immediate full-body fight-or-flight mobilization.
+### 2. Skeletal System (`z-skeleton.glb`)
+- **Axial Skeleton:** Cranium (frontal, parietal, temporal, occipital, sphenoid), 24 articulated vertebrae (7 cervical, 12 thoracic, 5 lumbar), sacrum, coccyx, sternum, and 12 pairs of costal ribs.
+- **Appendicular Skeleton:** Pectoral girdles (scapulae, clavicles), upper extremities (humerus, radius, ulna, carpals), pelvic girdle (ilium, ischium, pubis), and lower extremities (femur, patella, tibia, fibula, tarsals).
 
-### 4. Integumentary System & Sensory Mechanoreceptors
-- **Cutaneous Sensory Envelope:** 2 m² external tactile boundary featuring A-beta, A-delta, and C-fibers.
-- **Tactile Receptor Matrix:** Pacinian corpuscles (high-frequency vibration), Meissner corpuscles (grip slippage), Merkel discs (sustained point pressure), and Ruffini cylinders (skin stretch).
-- **Segmental Dermatomes (C2–S5):** Topographic spatial bands encircling the torso and limbs for clinical neurological localization.
+### 3. Muscular System (`z-muscular.glb`)
+- **Facial & Cervical Muscles:** Frontalis, temporalis, masseter, orbicularis oris, and sternocleidomastoid.
+- **Torso & Core:** Pectoralis major/minor, rectus abdominis, external obliques, latissimus dorsi, and trapezius.
+- **Extremity Musculature:** Deltoid, biceps, triceps, forearm flexors/extensors, gluteal complex, quadriceps femoris, hamstrings, and gastrocnemius/soleus.
+
+### 4. Cardiovascular System (`z-cardiovascular.glb`)
+- **Arterial Circulation:** Aortic arch, common carotids, subclavian, brachial, radial/ulnar, celiac trunk, mesenteric, renal, common iliac, and femoral arteries.
+- **Venous Drainage:** Superior/inferior vena cava, internal jugular, subclavian, cephalic, basilic, hepatic portal, renal, iliac, and saphenous veins.
+
+### 5. Nervous System & Central Neural Architecture (`z-nervous.glb`)
+- **Central Nervous System (CNS):** Cerebrum (12 cortical regions), cerebellum (69 billion neurons), brainstem (midbrain, pons, medulla oblongata), and the spinal cord axis.
+- **Peripheral Nervous System (PNS):** Cranial nerves (I–XII), brachial plexus (C5–T1), lumbosacral plexus (L1–S4), and sciatic nerve trunk.
+
+### 6. Integumentary System & Dermatomes (`z-skin.glb`)
+- **Cutaneous Surface Envelope:** 2.0 m² external protective barrier with translucent epidermal shader for depth visualization.
+- **Clinical Dermatomes (C2–S5):** Topographic sensory nerve root distribution bands mapped across head, trunk, and extremities.
+
+---
+
+## 🔬 Four Clinical Radiological Render Modes
+
+1. **X-Ray Multi-Layer Hologram:**
+   - Multi-layer translucent fresnel shader with custom opacities across all 6 systems simultaneously.
+   - Ideal for inspecting internal organ relationships and deep nerve pathways inside the skeletal cage.
+2. **Photoreal Anatomical Standard:**
+   - Opaque physical medical shading reproducing physiological tissue colors (crimson muscles, ivory bone, deep red liver, azure vessels).
+3. **Computed Tomography (CT Radiographic):**
+   - Inverted high-contrast radiodensity attenuation where dense cortical bone appears bright white (+1000 Hounsfield Units) and soft organs attenuate in diagnostic grayscale.
+4. **Magnetic Resonance Imaging (MRI Contrast):**
+   - High-contrast T1/T2 gradient tissue shader emphasizing fluid interfaces, neural myelination, and visceral organ parenchyma.
 
 ---
 
 ## ⚡ Biophysical Signal Propagation Cascades
 
-1. **Foot Stepping on Pin (Spinal Reflex & Cortical Pain):** Cutaneous A-delta/C-fibers → Tibial Nerve → L4–S1 Dorsal Horn (15 ms polysynaptic withdrawal reflex) → Spinothalamic Tract → S1 Somatosensory Cortex (200 ms conscious suffering).
-2. **Voluntary Precision Reach & Grip:** M1 Motor Cortex → Lateral Corticospinal Tract → C5–T1 Cervical Cord → Brachial Plexus → Radial / Median Nerves → Cutaneous Fingertip Mechanoreceptor feedback at 50 Hz.
-3. **Acute Fight-or-Flight Alarm:** Amygdala & Hypothalamus → Thoracolumbar Intermediolateral Horn → Cardiac Plexus (SA node 160 bpm) → Greater Splanchnic Nerve → Adrenal Epinephrine Surge → Splanchnic Vasoconstriction.
-4. **Gut-Brain Serotonin Highway:** Enteric Mucosal Transduction → Nodose Ganglion Sensory Vagal Afferents (80%) → Nucleus Tractus Solitarii (NTS) in Brainstem → Limbic Insula & Prefrontal Tuning.
+1. **Foot Stepping on Pin (Spinal Reflex Arc):** Noxious A-delta/C nociceptors → Tibial Nerve → L4–S1 Dorsal Horn (15 ms polysynaptic withdrawal reflex) → Spinothalamic Tract → Primary Somatosensory Cortex (200 ms conscious pain).
+2. **Voluntary Precision Reach & Grip:** M1 Motor Strip → Corticospinal Tract → C5–T1 Cervical Cord → Brachial Plexus → Median & Radial Nerves → 50 Hz mechanoreceptor grip feedback.
+3. **Acute Fight-or-Flight Alarm:** Amygdala & Hypothalamus → Thoracolumbar Sympathetic Axis → Cardiac Plexus (160 bpm) → Adrenal Epinephrine Surge → Splanchnic Vasoconstriction.
+4. **Gut-Brain Serotonin Highway:** Enteric Mucosal Mechanoreceptors → Vagal Afferent Fibers (80%) → Nucleus Tractus Solitarii (NTS) in Brainstem → Limbic & Prefrontal Modulation.
 
 ---
 
@@ -103,9 +131,16 @@ npm run preview
 
 ---
 
-## 🚀 Live Production Deployment
+## 🧪 Verification & Quality Assurance Suite
 
-NEUROSPACE is deployed in production on Vercel:
-- **Production URL:** [https://neurospace-3d.vercel.app](https://neurospace-3d.vercel.app)
-- **Deployment Platform:** Vercel Global Edge Network
-- **Build Status:** Verified 0 Errors, HTTP 200 OK
+- **TypeScript Strict Validation:** Compiled cleanly with zero errors via `tsc -b`.
+- **Vite Production Bundler:** Production assets compiled with optimized code-splitting and asset hashing (`dist/assets/`).
+- **Playwright WebGL2 Visual Suite:** Headless Chromium rendering at `1600×900` resolution capturing all 8 distinct medical system configurations and diagnostic modes.
+- **Production Hosting:** Deployed on **Vercel** at `https://neurospace-3d.vercel.app` with HTTP 200 OK response across all static GLB assets.
+
+---
+
+## 📄 License & Attribution
+
+- **Medical 3D Models:** Sourced from **Z-Anatomy** and **BodyParts3D** (DBCLS Japan), licensed under Creative Commons Attribution-ShareAlike (CC BY-SA 4.0 / 2.1 JP).
+- **Application Code:** MIT License © 2026 Karthikeya Sharma.

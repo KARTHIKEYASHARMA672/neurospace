@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { REGIONS, REGION_MAP, type RegionId } from '../data/regions';
 import { BODY_PARTS, BODY_PART_MAP, type BodyPartId, type ViewMode } from '../data/bodySystems';
 import type { SystemLayerVisibility } from '../data/anatomyLayers';
@@ -18,7 +19,7 @@ function gyriNoise(x: number, y: number, z: number): number {
   return n1 + n2 + n3 + n4 + (ridge1 + ridge2) * 0.42;
 }
 
-function makeGlowTexture(inner = 'rgba(255,255,255,1)', mid = 'rgba(255,255,255,0.28)'): THREE.CanvasTexture {
+function makeGlowTexture(inner = 'rgba(255,255,255,1)', mid = 'rgba(255,255,255,0.3)'): THREE.CanvasTexture {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const ctx = c.getContext('2d')!;
@@ -80,7 +81,7 @@ varying vec3 vView;
 void main() {
   vec3 n = normalize(vNormal);
   vec3 v = normalize(vView);
-  float fres = pow(1.0 - abs(dot(n, v)), 3.0);
+  float fres = pow(1.0 - abs(dot(n, v)), 3.2);
   gl_FragColor = vec4(uColor * fres * uIntensity, fres * uIntensity);
 }
 `;
@@ -110,6 +111,7 @@ export class UnifiedAnatomyScene {
   private rootGroup = new THREE.Group();
   private brainGroup = new THREE.Group();
   private fullBodyGroup = new THREE.Group();
+  private realisticMeshGroup = new THREE.Group();
   private nervousSystemGroup = new THREE.Group();
   private visceralOrgansGroup = new THREE.Group();
   private skinIntegumentaryGroup = new THREE.Group();
@@ -155,6 +157,10 @@ export class UnifiedAnatomyScene {
   private downPos = { x: 0, y: 0 };
   private resizeObserver: ResizeObserver | null = null;
 
+  // High-res realistic body mesh reference
+  private bodyMesh: THREE.Object3D | null = null;
+  private headMesh: THREE.Object3D | null = null;
+
   constructor(container: HTMLElement) {
     this.container = container;
     this.init();
@@ -168,13 +174,13 @@ export class UnifiedAnatomyScene {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(w, h);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.toneMappingExposure = 1.25;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.domElement.style.display = 'block';
     this.container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x100f0c, 0.022);
+    this.scene.fog = new THREE.FogExp2(0x100f0c, 0.02);
 
     this.camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
     this.camera.position.set(0, 0.6, 4.4);
@@ -199,16 +205,16 @@ export class UnifiedAnatomyScene {
     });
 
     // Lights
-    this.scene.add(new THREE.HemisphereLight(0xf2e2c4, 0x1e140c, 0.65));
-    const key = new THREE.DirectionalLight(0xffe8c8, 1.2);
+    this.scene.add(new THREE.HemisphereLight(0xf2e2c4, 0x1e140c, 0.7));
+    const key = new THREE.DirectionalLight(0xffe8c8, 1.3);
     key.position.set(3.5, 4.5, 4.5);
     this.scene.add(key);
 
-    const rim = new THREE.DirectionalLight(0xc9a961, 1.0);
+    const rim = new THREE.DirectionalLight(0xc9a961, 1.1);
     rim.position.set(-4.5, 2.5, -3.5);
     this.scene.add(rim);
 
-    const fill = new THREE.DirectionalLight(0xb5653a, 0.65);
+    const fill = new THREE.DirectionalLight(0xb5653a, 0.7);
     fill.position.set(-2.5, -2, 3.5);
     this.scene.add(fill);
 
@@ -216,15 +222,16 @@ export class UnifiedAnatomyScene {
     this.rootGroup.add(this.brainGroup);
     this.rootGroup.add(this.fullBodyGroup);
 
+    this.fullBodyGroup.add(this.realisticMeshGroup);
     this.fullBodyGroup.add(this.nervousSystemGroup);
     this.fullBodyGroup.add(this.visceralOrgansGroup);
     this.fullBodyGroup.add(this.skinIntegumentaryGroup);
     this.fullBodyGroup.add(this.dermatomeGroup);
 
-    // Build sub-assemblies
+    // Build anatomical sub-systems
     this.buildStarfield();
     this.buildBrainModel();
-    this.buildFullBodyModel();
+    this.loadHighResAnatomyModels();
     this.buildNervousSystemNetwork();
     this.buildVisceralOrgans();
     this.buildSkinIntegumentaryEnvelope();
@@ -300,6 +307,75 @@ export class UnifiedAnatomyScene {
   }
 
   /* ------------------------------------------------------------ */
+  /* Load Realistic 3D Human Body Anatomy (GLTF)                  */
+  /* ------------------------------------------------------------ */
+  private loadHighResAnatomyModels() {
+    const loader = new GLTFLoader();
+
+    // 1. Load Humanoid Anatomy Body
+    loader.load(
+      '/models/human_body.glb',
+      (gltf) => {
+        const model = gltf.scene;
+        model.scale.setScalar(1.2);
+        model.position.set(0, -1.35, 0);
+
+        model.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            mesh.material = new THREE.MeshPhysicalMaterial({
+              color: 0x30356f,
+              roughness: 0.45,
+              metalness: 0.15,
+              clearcoat: 0.85,
+              clearcoatRoughness: 0.35,
+              transparent: true,
+              opacity: 0.28,
+              wireframe: false,
+              side: THREE.DoubleSide,
+            });
+          }
+        });
+
+        this.bodyMesh = model;
+        this.realisticMeshGroup.add(model);
+      },
+      undefined,
+      (err) => console.warn('Could not load human_body.glb, fallback active:', err),
+    );
+
+    // 2. Load High-Res Cranial Head
+    loader.load(
+      '/models/head.glb',
+      (gltf) => {
+        const head = gltf.scene;
+        head.scale.setScalar(0.048);
+        head.position.set(0, 1.82, -0.02);
+
+        head.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            mesh.material = new THREE.MeshPhysicalMaterial({
+              color: 0x222650,
+              roughness: 0.4,
+              metalness: 0.15,
+              clearcoat: 0.9,
+              transparent: true,
+              opacity: 0.35,
+              wireframe: false,
+            });
+          }
+        });
+
+        this.headMesh = head;
+        this.realisticMeshGroup.add(head);
+      },
+      undefined,
+      (err) => console.warn('Could not load head.glb, fallback active:', err),
+    );
+  }
+
+  /* ------------------------------------------------------------ */
   /* 3D Brain Anatomy Sub-Assembly                                */
   /* ------------------------------------------------------------ */
   private buildBrainModel() {
@@ -356,7 +432,6 @@ export class UnifiedAnatomyScene {
     pons.position.set(0, -0.46, 0.3);
     this.brainGroup.add(pons);
 
-    // Brain regional clickable markers
     this.buildBrainRegionNodes();
   }
 
@@ -444,104 +519,6 @@ export class UnifiedAnatomyScene {
   }
 
   /* ------------------------------------------------------------ */
-  /* Full Body Anatomical Scaffold                                */
-  /* ------------------------------------------------------------ */
-  private buildFullBodyModel() {
-    // Cranial head silhouette
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.24, 32, 24),
-      new THREE.MeshPhysicalMaterial({
-        color: 0x222650,
-        roughness: 0.6,
-        metalness: 0.1,
-        transparent: true,
-        opacity: 0.45,
-        wireframe: false,
-      }),
-    );
-    head.scale.set(0.9, 1.15, 1.0);
-    head.position.set(0, 1.82, 0.02);
-    this.fullBodyGroup.add(head);
-
-    // Torso & Pelvis scaffold
-    const torso = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.28, 0.22, 1.05, 24),
-      new THREE.MeshPhysicalMaterial({
-        color: 0x1d2138,
-        roughness: 0.7,
-        metalness: 0.1,
-        transparent: true,
-        opacity: 0.35,
-      }),
-    );
-    torso.position.set(0, 0.95, -0.01);
-    this.fullBodyGroup.add(torso);
-
-    // Pelvis
-    const pelvis = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.22, 0.24, 0.32, 24),
-      new THREE.MeshPhysicalMaterial({
-        color: 0x1d2138,
-        roughness: 0.7,
-        metalness: 0.1,
-        transparent: true,
-        opacity: 0.35,
-      }),
-    );
-    pelvis.position.set(0, 0.36, -0.01);
-    this.fullBodyGroup.add(pelvis);
-
-    // Bilateral Upper Limbs (Bones/Silhouette)
-    [-1, 1].forEach((side) => {
-      // Clavicle & Shoulder
-      const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 12), this.ghostMaterial(0x30356f, 0.4));
-      shoulder.position.set(side * 0.38, 1.38, 0);
-      this.fullBodyGroup.add(shoulder);
-
-      // Arm (Humerus)
-      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.055, 0.52, 16), this.ghostMaterial(0x283050, 0.35));
-      arm.position.set(side * 0.46, 1.1, 0);
-      arm.rotation.z = side * -0.15;
-      this.fullBodyGroup.add(arm);
-
-      // Forearm (Radius & Ulna)
-      const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.48, 16), this.ghostMaterial(0x283050, 0.35));
-      forearm.position.set(side * 0.56, 0.65, 0.04);
-      forearm.rotation.z = side * -0.18;
-      this.fullBodyGroup.add(forearm);
-
-      // Hand
-      const hand = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.14, 0.03), this.ghostMaterial(0xc9a961, 0.45));
-      hand.position.set(side * 0.64, 0.36, 0.06);
-      this.fullBodyGroup.add(hand);
-    });
-
-    // Bilateral Lower Limbs (Femur, Tibia, Foot)
-    [-1, 1].forEach((side) => {
-      // Thigh (Femur)
-      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.72, 18), this.ghostMaterial(0x283050, 0.35));
-      thigh.position.set(side * 0.16, -0.12, 0.01);
-      thigh.rotation.z = side * -0.04;
-      this.fullBodyGroup.add(thigh);
-
-      // Knee Joint
-      const knee = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 12), this.ghostMaterial(0x30356f, 0.4));
-      knee.position.set(side * 0.17, -0.5, 0.02);
-      this.fullBodyGroup.add(knee);
-
-      // Lower Leg (Tibia/Fibula)
-      const shank = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.05, 0.7, 18), this.ghostMaterial(0x283050, 0.35));
-      shank.position.set(side * 0.18, -0.88, 0.01);
-      this.fullBodyGroup.add(shank);
-
-      // Foot & Plantar base
-      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.06, 0.22), this.ghostMaterial(0xc9a961, 0.45));
-      foot.position.set(side * 0.19, -1.26, 0.06);
-      this.fullBodyGroup.add(foot);
-    });
-  }
-
-  /* ------------------------------------------------------------ */
   /* Full-Body Nervous System & Plexus Network                    */
   /* ------------------------------------------------------------ */
   private buildNervousSystemNetwork() {
@@ -604,7 +581,6 @@ export class UnifiedAnatomyScene {
 
     // 4. Brachial Plexus & Arm Peripheral Nerves (Bilateral)
     [-1, 1].forEach((side) => {
-      // Brachial plexus converging trunk
       const trunkCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(side * 0.08, 1.4, -0.02),
         new THREE.Vector3(side * 0.24, 1.34, 0.01),
@@ -617,7 +593,6 @@ export class UnifiedAnatomyScene {
         ),
       );
 
-      // Radial Nerve (Posterior spiral groove)
       const radialCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(side * 0.38, 1.25, 0.02),
         new THREE.Vector3(side * 0.44, 1.12, -0.04),
@@ -632,7 +607,6 @@ export class UnifiedAnatomyScene {
         ),
       );
 
-      // Median Nerve (Anterior flexor compartment)
       const medianCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(side * 0.38, 1.25, 0.02),
         new THREE.Vector3(side * 0.42, 1.08, 0.03),
@@ -650,7 +624,6 @@ export class UnifiedAnatomyScene {
 
     // 5. Lumbosacral Plexus, Sciatic & Femoral Nerves (Bilateral)
     [-1, 1].forEach((side) => {
-      // Sciatic Nerve (Posterior thigh, 2cm caliber)
       const sciaticCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(side * 0.08, 0.35, -0.04),
         new THREE.Vector3(side * 0.14, 0.22, -0.07),
@@ -665,7 +638,6 @@ export class UnifiedAnatomyScene {
         ),
       );
 
-      // Femoral Nerve (Anterior thigh)
       const femoralCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(side * 0.06, 0.42, 0.01),
         new THREE.Vector3(side * 0.12, 0.28, 0.06),
@@ -679,7 +651,6 @@ export class UnifiedAnatomyScene {
         ),
       );
 
-      // Tibial Nerve down to plantar foot
       const tibialCurve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(side * 0.17, -0.58, -0.03),
         new THREE.Vector3(side * 0.17, -0.85, -0.04),
@@ -694,7 +665,6 @@ export class UnifiedAnatomyScene {
       );
     });
 
-    // 6. Build interactive Body Part visual clickable hubs
     this.buildBodyPartNodes();
   }
 
@@ -703,7 +673,6 @@ export class UnifiedAnatomyScene {
       const [x, y, z] = part.position3D;
       const color = new THREE.Color(part.color);
 
-      // Glowing billboard sprite
       const glowMat = new THREE.SpriteMaterial({
         map: glowTex,
         color,
@@ -719,7 +688,6 @@ export class UnifiedAnatomyScene {
       glow.renderOrder = 18;
       this.nervousSystemGroup.add(glow);
 
-      // 3D Core nucleus
       const nucleus = new THREE.Mesh(
         new THREE.SphereGeometry(part.size * 0.34, 16, 12),
         new THREE.MeshBasicMaterial({
@@ -734,7 +702,6 @@ export class UnifiedAnatomyScene {
       nucleus.renderOrder = 19;
       this.nervousSystemGroup.add(nucleus);
 
-      // Clickable raycast hit mesh
       const hit = new THREE.Mesh(
         new THREE.SphereGeometry(Math.max(part.size * 0.75, 0.14), 10, 8),
         new THREE.MeshBasicMaterial({ visible: false }),
@@ -811,7 +778,6 @@ export class UnifiedAnatomyScene {
     stomach.rotation.set(0.2, 0.3, -0.4);
     this.visceralOrgansGroup.add(stomach);
 
-    // Intestinal convolutions
     const coil = new THREE.Mesh(
       new THREE.SphereGeometry(0.18, 20, 16),
       new THREE.MeshStandardMaterial({
@@ -835,7 +801,6 @@ export class UnifiedAnatomyScene {
       kidney.position.set(side * 0.15, 0.72, -0.04);
       this.visceralOrgansGroup.add(kidney);
 
-      // Adrenal cap
       const adrenal = new THREE.Mesh(
         new THREE.ConeGeometry(0.035, 0.045, 12),
         new THREE.MeshStandardMaterial({ color: 0xc98a2c, emissive: 0xc98a2c, emissiveIntensity: 0.5 }),
@@ -849,15 +814,14 @@ export class UnifiedAnatomyScene {
   /* Skin Integumentary Envelope & Sensory Tactile Shell          */
   /* ------------------------------------------------------------ */
   private buildSkinIntegumentaryEnvelope() {
-    // Torso skin transparent shell
     const skinMat = new THREE.MeshPhysicalMaterial({
       color: 0x30356f,
-      roughness: 0.5,
-      metalness: 0.05,
+      roughness: 0.4,
+      metalness: 0.08,
       transparent: true,
-      opacity: 0.18,
-      clearcoat: 0.6,
-      clearcoatRoughness: 0.4,
+      opacity: 0.16,
+      clearcoat: 0.7,
+      clearcoatRoughness: 0.3,
       side: THREE.DoubleSide,
     });
 
@@ -866,7 +830,7 @@ export class UnifiedAnatomyScene {
     this.skinIntegumentaryGroup.add(torsoSkin);
 
     // Tactile sensory dots over fingertips and palms
-    const N = 180;
+    const N = 200;
     const dotPos = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) {
       const side = i % 2 === 0 ? 1 : -1;
@@ -927,17 +891,6 @@ export class UnifiedAnatomyScene {
       sheen: 0.2,
       sheenColor: new THREE.Color(0xc9a961),
       vertexColors: withVertexColors,
-    });
-  }
-
-  private ghostMaterial(col: number, opacity: number): THREE.MeshPhysicalMaterial {
-    return new THREE.MeshPhysicalMaterial({
-      color: col,
-      roughness: 0.7,
-      metalness: 0.1,
-      transparent: true,
-      opacity,
-      clearcoat: 0.3,
     });
   }
 
@@ -1007,7 +960,7 @@ export class UnifiedAnatomyScene {
       this.controls.minDistance = 1.0;
       this.controls.maxDistance = 12;
 
-      // Filter layer visibility according to mode
+      this.realisticMeshGroup.visible = true;
       this.nervousSystemGroup.visible = this.layers.peripheralNerves || this.layers.centralNervous;
       this.visceralOrgansGroup.visible = mode === 'organs' || (mode === 'fullbody' && this.layers.autonomicOrgans);
       this.skinIntegumentaryGroup.visible = mode === 'skin' || (mode === 'fullbody' && this.layers.skinIntegumentary);
@@ -1022,6 +975,9 @@ export class UnifiedAnatomyScene {
       this.visceralOrgansGroup.visible = layers.autonomicOrgans;
       this.skinIntegumentaryGroup.visible = layers.skinIntegumentary;
       this.dermatomeGroup.visible = layers.dermatomeBands;
+      if (this.bodyMesh) {
+        this.bodyMesh.visible = layers.skinIntegumentary;
+      }
     }
   }
 
@@ -1218,8 +1174,6 @@ export class UnifiedAnatomyScene {
     const time = this.clock.getElapsedTime();
 
     this.controls.update();
-
-    // Smooth focus lerp
     this.controls.target.lerp(this.cameraTarget, 0.08);
 
     // Pulse animation
@@ -1266,8 +1220,8 @@ export class UnifiedAnatomyScene {
       }
     }
 
-    // Gentle breathing oscillation
-    const breath = 1 + Math.sin(time * 1.4) * 0.015;
+    // Gentle organic breathing oscillation
+    const breath = 1 + Math.sin(time * 1.4) * 0.012;
     if (this.viewMode === 'fullbody') {
       this.fullBodyGroup.scale.set(1, breath, 1);
     }
