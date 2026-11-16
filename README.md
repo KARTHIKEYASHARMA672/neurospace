@@ -12,11 +12,11 @@
 | **Version** | `2.1.0` Production Grade |
 | **Workspace Directory** | `L:\pr 30(NEUROSPACE)` |
 | **Reference Architecture** | Humanome (`humanome.co`) / Z-Anatomy Clinical 3D Coordinate Standard |
-| **Primary Visual Palette** | **Midnight Indigo & Vanilla** (`#30356F` Midnight Indigo + `#FBF5E6` Vanilla Neutral + `#C9A961` Synaptic Gold + `#802838` Crimson Alert) via `colours for websites` skill |
-| **Frontend Stack** | React 19, TypeScript 5.8+, Vite 6, Tailwind CSS v3.4+, Three.js WebGL2 (`three@0.175.0`), GLTFLoader, Lucide Icons |
-| **3D Anatomical Assets** | 6 Sub-system Z-Anatomy GLBs (`z-skeleton.glb`, `z-organs.glb`, `z-muscular.glb`, `z-nervous.glb`, `z-cardiovascular.glb`, `z-skin.glb`) aligning to exact anatomical origin |
+| **Primary Visual Palette** | **Teal & Oat Milk** (`#14B8A6` Surgical Teal + `#091211` Deep Slate Void + `#0D1917` Abyss + `#F6F3E9` Warm Oat Milk Text + `#E11D48` Arterial Crimson + `#2563EB` Venous Blue) via `colours for websites` skill |
+| **Frontend Stack** | React 19, TypeScript 5.8+, Vite 6, Tailwind CSS v3.4+, Three.js WebGL2 (`three@0.175.0`), GLTFLoader, MeshoptDecoder, Lucide Icons |
+| **3D Anatomical Assets** | 6 Sub-system Z-Anatomy GLBs (`z-skeleton.glb`, `z-organs.glb`, `z-muscular.glb`, `z-nervous.glb`, `z-cardiovascular.glb`, `z-skin.glb`) + Procedural High-Fidelity 3D Organ Engines |
 | **Rendering Modes** | **X-Ray Multi-Layer Hologram**, **Photoreal Anatomical Standard**, **Computed Tomography (CT Radiographic)**, **Magnetic Resonance Imaging (MRI Tissue Contrast)** |
-| **Verified Verification Suite** | Playwright WebGL2 Chromium headless verification (`1600×900`), 0 console errors, 8/8 high-res state screenshots captured |
+| **Verified Verification Suite** | Playwright WebGL2 Chromium headless verification (`1440×900`), 0 console errors, 10/10 high-res state screenshots captured |
 | **Public GitHub Repository** | [`KARTHIKEYASHARMA672/neurospace`](https://github.com/KARTHIKEYASHARMA672/neurospace) (`main`) |
 | **Hosted Production URL** | [https://neurospace-3d.vercel.app](https://neurospace-3d.vercel.app) (HTTP 200 OK via Vercel) |
 | **LinkedIn Showcase Schedule** | Day 18 Queue (`automation_tracker.json` & `posts_ready.json`) |
@@ -25,27 +25,32 @@
 
 ## 🖼️ Verified Visual UI Gallery
 
-> 📸 *All 8 visual artifacts below are verified live screenshots rendered using Playwright WebGL Chromium headless suite against the production build with Meshopt-decoded Z-Anatomy 3D models.*
+> 📸 *All 10 visual artifacts below are verified live screenshots rendered using Playwright WebGL Chromium headless suite against the production build with Meshopt-decoded Z-Anatomy 3D models and high-detail procedural organ engines.*
 
-| 01 — Heart & Ventricles (3D Focused Anatomical View) | 02 — Full Multi-System X-Ray Hologram |
+| 01 — Heart & Coronary Vessels (3D Focused View) | 02 — Heart Coronal Cutaway (Internal Chambers & Valves) |
 | :---: | :---: |
-| ![01 Heart Ventricles Focused](./screenshots/01_heart_ventricles_focused_3d.png) | ![02 Multi-System X-Ray](./screenshots/02_humanome_xray_multisystem_composite.png) |
-| *Close-up 3D target lock on the 4-chambered human heart, ascending aorta, aortic arch, and coronary circulation.* | *Composite multi-layer X-Ray view showing complete human skeletal frame, visceral organs, and vascular envelope.* |
+| ![01 Heart Exterior](./screenshots/01_3d_heart_exterior_coronary_vessels.png) | ![02 Heart Cutaway](./screenshots/02_3d_heart_interior_cutaway_chambers.png) |
+| *True-to-life 3D myocardium showing ascending aorta, aortic arch with 3 carotid branches, LAD, and RCA.* | *Interactive coronal cross-section revealing internal right/left ventricles, mitral/tricuspid valves, and papillary muscular columns.* |
 
-| 03 — Photoreal Anatomical Standard Mode | 04 — Liver & Hepatic Couinaud Segments |
+| 03 — Brain & Cerebral Cortex 3D Atlas | 04 — Lungs & Tracheobronchial Airway Tree |
 | :---: | :---: |
-| ![03 Photoreal Mode](./screenshots/03_photoreal_anatomical_standard.png) | ![04 Liver Focused](./screenshots/04_liver_hepatic_segments_focused.png) |
-| *True-to-life medical shading reproducing physiological tissue colors (crimson muscles, ivory bone, deep red liver, azure veins).* | *Deep target lock on the liver, gallbladder, biliary ducts, and 8 Couinaud metabolic segments.* |
+| ![03 Brain Atlas](./screenshots/03_3d_brain_cerebral_cortex_atlas.png) | ![04 Lungs Airway](./screenshots/04_3d_lungs_tracheobronchial_tree.png) |
+| *Sculpted cerebral gyri/sulci, temporal/occipital lobes, cerebellum with folia, and synaptically pulsing neural core.* | *Trachea with C-shaped cartilaginous rings, carina bifurcation, primary bronchi, and bilateral 5 lobes with cardiac notch.* |
 
-| 05 — Brain & Cerebral Cortex 3D Focus | 06 — Computed Tomography (CT) Radiographic Mode |
+| 05 — Liver, Couinaud Segments & Gallbladder | 06 — Kidneys & Coronal Nephron Cross-Section |
 | :---: | :---: |
-| ![05 Brain Focus](./screenshots/05_brain_cerebral_cortex_focused.png) | ![06 Computed Tomography CT](./screenshots/06_computed_tomography_ct_mode.png) |
-| *Cranial vault zoom displaying cerebrum, cortical lobes, brainstem, and upper spinal cord tract.* | *Radiographic bone density attenuation filter simulating clinical CT scans with diagnostic high-contrast bone and soft-tissue absorption.* |
+| ![05 Liver Biliary](./screenshots/05_3d_liver_gallbladder_biliary.png) | ![06 Kidneys Urinary](./screenshots/06_3d_kidneys_urinary_tract.png) |
+| *Large hepatic parenchyma displaying right and left anatomical lobes, falciform demarcation, and emerald green gallbladder.* | *Bilateral retroperitoneal kidneys, suprarenal adrenal caps, renal cortex, medullary pyramids, calyces, and descending ureters.* |
 
-| 07 — Magnetic Resonance Imaging (MRI) Mode | 08 — Live Telemetry, EEG Power Bands & Neurotransmitters |
+| 07 — Articulated Skeletal Framework (206 Bones) | 08 — Muscular System (650+ Striated Muscles) |
 | :---: | :---: |
-| ![07 MRI Mode](./screenshots/07_magnetic_resonance_imaging_mri_mode.png) | ![08 Live Telemetry](./screenshots/08_live_eeg_telemetry_neurotransmitters.png) |
-| *T1/T2 diagnostic tissue contrast shader emphasizing neural tracts, soft tissue margins, fluid boundaries, and internal visceral anatomy.* | *Continuous 60 Hz synthetic EEG oscilloscope with 5 Fourier spectral bands (Delta to Gamma) and 6 clinical neurotransmitter concentration gauges.* |
+| ![07 Skeleton System](./screenshots/07_3d_articulated_skeleton.png) | ![08 Muscular System](./screenshots/08_3d_muscular_kinetic_system.png) |
+| *Clean isolated full-body articulated skeleton displaying axial vertebral column, ribcage, cranium, and extremities.* | *Z-Anatomy striated muscular anatomy revealing superficial and deep kinetic chains with subtle translucent bone support.* |
+
+| 09 — Full Human Body 6-Layer Multi-System Composite | 10 — X-Ray Radiological Hologram Mode |
+| :---: | :---: |
+| ![09 Full Body Composite](./screenshots/09_3d_full_human_body_composite.png) | ![10 X-Ray Mode](./screenshots/10_3d_xray_radiological_hologram.png) |
+| *Seamless composite of all 6 Z-Anatomy layers: Skeleton, Muscular, Organs, Vascular, Nervous, and Skin.* | *Radiological depth mode rendering multi-layer translucent bone, vascular, and organ structures.* |
 
 ---
 
