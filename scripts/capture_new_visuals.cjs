@@ -67,7 +67,7 @@ async function saveShot(page, filename) {
     });
 
     await page.goto(BASE, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(5000);
 
     // 1. Heart 3D Exterior View
     await saveShot(page, '01_3d_heart_exterior_coronary_vessels.png');
@@ -76,7 +76,7 @@ async function saveShot(page, filename) {
     const cutawayBtn = await page.locator('button:has-text("Interior Chambers Cutaway")').first();
     if (await cutawayBtn.isVisible()) {
       await cutawayBtn.click();
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(2500);
       await saveShot(page, '02_3d_heart_interior_cutaway_chambers.png');
     }
 
@@ -84,7 +84,7 @@ async function saveShot(page, filename) {
     const brainBtn = await page.locator('button:has-text("Brain & Cortex")').first();
     if (await brainBtn.isVisible()) {
       await brainBtn.click();
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(2500);
       await saveShot(page, '03_3d_brain_cerebral_cortex_atlas.png');
     }
 
@@ -92,7 +92,7 @@ async function saveShot(page, filename) {
     const lungsBtn = await page.locator('button:has-text("Lungs & Airway")').first();
     if (await lungsBtn.isVisible()) {
       await lungsBtn.click();
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(2500);
       await saveShot(page, '04_3d_lungs_tracheobronchial_tree.png');
     }
 
@@ -100,7 +100,7 @@ async function saveShot(page, filename) {
     const liverBtn = await page.locator('button:has-text("Liver & Biliary")').first();
     if (await liverBtn.isVisible()) {
       await liverBtn.click();
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(2500);
       await saveShot(page, '05_3d_liver_gallbladder_biliary.png');
     }
 
@@ -108,7 +108,7 @@ async function saveShot(page, filename) {
     const kidneyBtn = await page.locator('button:has-text("Kidneys & Urinary")').first();
     if (await kidneyBtn.isVisible()) {
       await kidneyBtn.click();
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(2500);
       await saveShot(page, '06_3d_kidneys_urinary_tract.png');
     }
 
@@ -116,7 +116,7 @@ async function saveShot(page, filename) {
     const skeletonBtn = await page.locator('button:has-text("Skeleton")').first();
     if (await skeletonBtn.isVisible()) {
       await skeletonBtn.click();
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(2500);
       await saveShot(page, '07_3d_articulated_skeleton.png');
     }
 
@@ -124,7 +124,7 @@ async function saveShot(page, filename) {
     const muscularBtn = await page.locator('button:has-text("Muscular System")').first();
     if (await muscularBtn.isVisible()) {
       await muscularBtn.click();
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(2500);
       await saveShot(page, '08_3d_muscular_kinetic_system.png');
     }
 
@@ -132,7 +132,7 @@ async function saveShot(page, filename) {
     const fullbodyBtn = await page.locator('button:has-text("Full Human Body")').first();
     if (await fullbodyBtn.isVisible()) {
       await fullbodyBtn.click();
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(3500);
       await saveShot(page, '09_3d_full_human_body_composite.png');
     }
 
@@ -140,7 +140,7 @@ async function saveShot(page, filename) {
     const xrayBtn = await page.locator('button:has-text("X-Ray")').first();
     if (await xrayBtn.isVisible()) {
       await xrayBtn.click();
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(2500);
       await saveShot(page, '10_3d_xray_radiological_hologram.png');
     }
 

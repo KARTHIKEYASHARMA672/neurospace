@@ -14,7 +14,7 @@
 | **Reference Architecture** | Humanome (`humanome.co`) / Z-Anatomy Clinical 3D Coordinate Standard |
 | **Primary Visual Palette** | **Teal & Oat Milk** (`#14B8A6` Surgical Teal + `#091211` Deep Slate Void + `#0D1917` Abyss + `#F6F3E9` Warm Oat Milk Text + `#E11D48` Arterial Crimson + `#2563EB` Venous Blue) via `colours for websites` skill |
 | **Frontend Stack** | React 19, TypeScript 5.8+, Vite 6, Tailwind CSS v3.4+, Three.js WebGL2 (`three@0.175.0`), GLTFLoader, MeshoptDecoder, Lucide Icons |
-| **3D Anatomical Assets** | 6 Sub-system Z-Anatomy GLBs (`z-skeleton.glb`, `z-organs.glb`, `z-muscular.glb`, `z-nervous.glb`, `z-cardiovascular.glb`, `z-skin.glb`) + Procedural High-Fidelity 3D Organ Engines |
+| **3D Anatomical Assets** | 6 Sub-system Z-Anatomy GLBs (`z-skeleton.glb`, `z-organs.glb`, `z-muscular.glb`, `z-nervous.glb`, `z-cardiovascular.glb`, `z-skin.glb`) with Authentic Clinical Mesh Isolation & Real-Time PBR Shaders |
 | **Rendering Modes** | **X-Ray Multi-Layer Hologram**, **Photoreal Anatomical Standard**, **Computed Tomography (CT Radiographic)**, **Magnetic Resonance Imaging (MRI Tissue Contrast)** |
 | **Verified Verification Suite** | Playwright WebGL2 Chromium headless verification (`1440×900`), 0 console errors, 10/10 high-res state screenshots captured |
 | **Public GitHub Repository** | [`KARTHIKEYASHARMA672/neurospace`](https://github.com/KARTHIKEYASHARMA672/neurospace) (`main`) |
@@ -25,7 +25,7 @@
 
 ## 🖼️ Verified Visual UI Gallery
 
-> 📸 *All 10 visual artifacts below are verified live screenshots rendered using Playwright WebGL Chromium headless suite against the production build with Meshopt-decoded Z-Anatomy 3D models and high-detail procedural organ engines.*
+> 📸 *All 10 visual artifacts below are verified live screenshots rendered using Playwright WebGL Chromium headless suite against the production build with Meshopt-decoded authentic Z-Anatomy clinical 3D organ models.*
 
 | 01 — Heart & Coronary Vessels (3D Focused View) | 02 — Heart Coronal Cutaway (Internal Chambers & Valves) |
 | :---: | :---: |

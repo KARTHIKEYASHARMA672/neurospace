@@ -79,9 +79,8 @@ export class AnatomyAtlasScene {
   private isLerpingCamera = false;
 
   // Organ specific animated nodes
-  private heartVentriclesMesh: THREE.Mesh | null = null;
-  private heartAtriaMesh: THREE.Mesh | null = null;
-  private lungsMeshGroup: THREE.Group | null = null;
+  private heartNode: THREE.Object3D | null = null;
+  private lungsNode: THREE.Object3D | null = null;
   private brainGlowMat: THREE.MeshPhysicalMaterial | null = null;
 
   // Pins
@@ -239,6 +238,7 @@ export class AnatomyAtlasScene {
           this.systemModels.set(sys.id, model);
           this.fullBodyGroup.add(model);
           this.applyFullBodyMaterials(sys.id);
+          this.switchToView(this.currentView);
         },
         undefined,
         (err) => console.warn(`Failed loading system ${sys.id}:`, err),
@@ -329,28 +329,24 @@ export class AnatomyAtlasScene {
       return;
     }
 
-    // Hide full body and display isolated organ model
-    this.fullBodyGroup.visible = false;
-    this.controls.autoRotate = false;
-
     switch (view) {
       case 'heart':
-        this.buildHighDetailHeart();
+        this.buildClinicalHeart();
         break;
       case 'brain':
-        this.buildHighDetailBrain();
+        this.buildClinicalBrain();
         break;
       case 'lungs':
-        this.buildHighDetailLungs();
+        this.buildClinicalLungs();
         break;
       case 'liver':
-        this.buildHighDetailLiver();
+        this.buildClinicalLiver();
         break;
       case 'kidneys':
-        this.buildHighDetailKidneys();
+        this.buildClinicalKidneys();
         break;
       case 'stomach':
-        this.buildHighDetailDigestive();
+        this.buildClinicalDigestive();
         break;
       case 'skeleton':
         this.buildIsolatedSkeleton();
@@ -375,753 +371,370 @@ export class AnatomyAtlasScene {
     }
     this.activePins = [];
     this.pinSprites = [];
-    this.heartVentriclesMesh = null;
-    this.heartAtriaMesh = null;
-    this.lungsMeshGroup = null;
+    if (this.heartNode) {
+      this.heartNode.scale.set(5, 5, 5);
+      this.heartNode = null;
+    }
+    if (this.lungsNode) {
+      this.lungsNode.scale.set(0.8, 0.8, 0.8);
+      this.lungsNode = null;
+    }
     this.brainGlowMat = null;
   }
 
   /* ------------------------------------------------------------ */
-  /* 🫀 1. High-Detail 3D Heart Builder                            */
+  /* Clinical 3D Z-Anatomy Organ Mesh Isolation Engine            */
   /* ------------------------------------------------------------ */
-  private buildHighDetailHeart() {
-    const group = new THREE.Group();
+  private isolateOrganMeshes(systemKey: string, allowedKeywords: string[], secondarySystemKeys: string[] = []): THREE.Mesh[] {
+    const matchedMeshes: THREE.Mesh[] = [];
+    this.fullBodyGroup.visible = true;
 
-    // 1. Left & Right Ventricles (Conical myocardial muscular body)
-    const ventriclesGeo = new THREE.SphereGeometry(0.24, 48, 48);
-    // Sculpt heart apex & conical distortion
-    const pos = ventriclesGeo.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      let x = pos.getX(i);
-      let y = pos.getY(i);
-      let z = pos.getZ(i);
-
-      if (y < 0) {
-        // Taper towards apex
-        const taper = 1.0 + y * 1.5;
-        x *= Math.max(0.2, taper);
-        z *= Math.max(0.2, taper);
-        x += y * 0.12; // Point slightly leftward
+    // Isolate target systems: hide all others
+    this.systemModels.forEach((model, key) => {
+      if (key !== systemKey && !secondarySystemKeys.includes(key)) {
+        model.visible = false;
       } else {
-        // Sulcus groove between ventricles
-        if (Math.abs(x) < 0.05 && z > 0) {
-          z *= 0.88;
-        }
+        model.visible = true;
       }
-      pos.setXYZ(i, x, y * 1.35, z);
-    }
-    ventriclesGeo.computeVertexNormals();
-
-    const heartMat = new THREE.MeshPhysicalMaterial({
-      color: 0x991b1b, // Deep rich myocardial crimson
-      roughness: 0.35,
-      metalness: 0.1,
-      clearcoat: 0.8,
-      clearcoatRoughness: 0.25,
-      clippingPlanes: this.isCutaway ? [this.cutawayPlane] : [],
-      clipShadows: true,
-    });
-    const ventricles = new THREE.Mesh(ventriclesGeo, heartMat);
-    ventricles.position.set(0, -0.05, 0);
-    group.add(ventricles);
-    this.heartVentriclesMesh = ventricles;
-
-    // 2. Left & Right Atria (Superior thin-walled chambers)
-    const atriaGeo = new THREE.SphereGeometry(0.16, 36, 36);
-    const atriaMat = new THREE.MeshPhysicalMaterial({
-      color: 0x7f1d1d,
-      roughness: 0.45,
-      clearcoat: 0.5,
-      clippingPlanes: this.isCutaway ? [this.cutawayPlane] : [],
-    });
-    const rightAtrium = new THREE.Mesh(atriaGeo, atriaMat);
-    rightAtrium.scale.set(0.9, 0.8, 0.9);
-    rightAtrium.position.set(-0.14, 0.18, 0.02);
-    group.add(rightAtrium);
-
-    const leftAtrium = new THREE.Mesh(atriaGeo, atriaMat);
-    leftAtrium.scale.set(0.85, 0.75, 0.85);
-    leftAtrium.position.set(0.14, 0.19, -0.04);
-    group.add(leftAtrium);
-
-    // 3. Ascending Aorta & Great Aortic Arch with 3 Carotid Branches
-    const aortaCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0.02, 0.12, 0.04),
-      new THREE.Vector3(0.04, 0.32, 0.02),
-      new THREE.Vector3(-0.02, 0.42, -0.02),
-      new THREE.Vector3(-0.08, 0.38, -0.06),
-      new THREE.Vector3(-0.09, 0.12, -0.09),
-    ]);
-    const aortaGeo = new THREE.TubeGeometry(aortaCurve, 40, 0.048, 24, false);
-    const aortaMat = new THREE.MeshPhysicalMaterial({
-      color: 0xdc2626, // Bright oxygenated arterial red
-      roughness: 0.3,
-      clearcoat: 0.85,
-    });
-    const aorta = new THREE.Mesh(aortaGeo, aortaMat);
-    group.add(aorta);
-
-    // 3 Arch Branches (Brachiocephalic, Left Common Carotid, Left Subclavian)
-    [-0.01, 0.02, 0.05].forEach((offset, idx) => {
-      const branchCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(offset, 0.41, -0.01),
-        new THREE.Vector3(offset * 1.3, 0.52 + idx * 0.02, -0.01),
-      ]);
-      const branchGeo = new THREE.TubeGeometry(branchCurve, 16, 0.014, 16, false);
-      group.add(new THREE.Mesh(branchGeo, aortaMat));
     });
 
-    // 4. Pulmonary Trunk & Bifurcation (Crosses in front of aorta)
-    const pulmCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-0.05, 0.12, 0.08),
-      new THREE.Vector3(-0.02, 0.28, 0.06),
-      new THREE.Vector3(0.02, 0.32, -0.02),
-    ]);
-    const pulmGeo = new THREE.TubeGeometry(pulmCurve, 24, 0.044, 20, false);
-    const pulmMat = new THREE.MeshPhysicalMaterial({
-      color: 0x1d4ed8, // Blue deoxygenated pulmonary blood
-      roughness: 0.35,
-      clearcoat: 0.7,
-    });
-    group.add(new THREE.Mesh(pulmGeo, pulmMat));
+    const targetSystems = [systemKey, ...secondarySystemKeys];
+    targetSystems.forEach((sysKey) => {
+      const root = this.systemModels.get(sysKey);
+      if (!root) return;
+      root.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          let match = false;
+          let curr: THREE.Object3D | null = mesh;
+          while (curr && curr !== root) {
+            const nameLower = (curr.name || '').toLowerCase();
+            if (allowedKeywords.some((kw) => nameLower.includes(kw))) {
+              match = true;
+              break;
+            }
+            curr = curr.parent;
+          }
 
-    // Left and Right pulmonary branches
-    const pLeftCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0.02, 0.32, -0.02),
-      new THREE.Vector3(0.18, 0.30, -0.06),
-    ]);
-    const pRightCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0.02, 0.32, -0.02),
-      new THREE.Vector3(-0.16, 0.31, -0.06),
-    ]);
-    group.add(new THREE.Mesh(new THREE.TubeGeometry(pLeftCurve, 16, 0.024, 16, false), pulmMat));
-    group.add(new THREE.Mesh(new THREE.TubeGeometry(pRightCurve, 16, 0.024, 16, false), pulmMat));
-
-    // 5. Superior & Inferior Vena Cava (Large venous channels entering Right Atrium)
-    const svcCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-0.18, 0.44, 0.01),
-      new THREE.Vector3(-0.16, 0.18, 0.01),
-    ]);
-    const svcGeo = new THREE.TubeGeometry(svcCurve, 16, 0.038, 20, false);
-    group.add(new THREE.Mesh(svcGeo, pulmMat));
-
-    const ivcCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-0.14, 0.12, 0.01),
-      new THREE.Vector3(-0.12, -0.22, 0.01),
-    ]);
-    group.add(new THREE.Mesh(new THREE.TubeGeometry(ivcCurve, 16, 0.034, 18, false), pulmMat));
-
-    // 6. Coronary Arteries (Left Anterior Descending & Circumflex Arteries)
-    const ladCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0.02, 0.14, 0.22),
-      new THREE.Vector3(0.03, 0.02, 0.24),
-      new THREE.Vector3(0.05, -0.12, 0.20),
-      new THREE.Vector3(0.08, -0.26, 0.11),
-      new THREE.Vector3(0.06, -0.34, 0.04),
-    ]);
-    const ladGeo = new THREE.TubeGeometry(ladCurve, 32, 0.009, 12, false);
-    const ladMat = new THREE.MeshPhysicalMaterial({
-      color: 0xef4444,
-      emissive: 0x991b1b,
-      emissiveIntensity: 0.3,
-      roughness: 0.2,
-      metalness: 0.1,
-    });
-    group.add(new THREE.Mesh(ladGeo, ladMat));
-
-    // Right Coronary Artery (RCA)
-    const rcaCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-0.06, 0.14, 0.18),
-      new THREE.Vector3(-0.12, 0.06, 0.19),
-      new THREE.Vector3(-0.14, -0.06, 0.16),
-      new THREE.Vector3(-0.12, -0.18, 0.12),
-    ]);
-    group.add(new THREE.Mesh(new THREE.TubeGeometry(rcaCurve, 24, 0.008, 12, false), ladMat));
-
-    // 7. Interior Cutaway Details: Papillary Muscles & Mitral / Tricuspid Valves
-    if (this.isCutaway) {
-      const valveRingGeo = new THREE.TorusGeometry(0.07, 0.01, 16, 32);
-      const valveMat = new THREE.MeshPhysicalMaterial({
-        color: 0xfef08a,
-        roughness: 0.2,
-        clearcoat: 0.9,
+          mesh.visible = match;
+          if (match) {
+            matchedMeshes.push(mesh);
+            if (mesh.material) {
+              const mat = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+              mat.forEach((m) => {
+                if (m instanceof THREE.MeshStandardMaterial || m instanceof THREE.MeshPhysicalMaterial) {
+                  m.clippingPlanes = this.isCutaway ? [this.cutawayPlane] : [];
+                  m.clipShadows = true;
+                }
+              });
+            }
+          }
+        }
       });
-      const valveMesh = new THREE.Mesh(valveRingGeo, valveMat);
-      valveMesh.rotation.x = Math.PI / 2;
-      valveMesh.position.set(0.06, 0.06, 0.0);
-      group.add(valveMesh);
+    });
 
-      // Papillary muscular columns
-      const papGeo = new THREE.CylinderGeometry(0.02, 0.035, 0.14, 16);
-      const papMesh = new THREE.Mesh(papGeo, heartMat);
-      papMesh.position.set(0.06, -0.12, 0.0);
-      group.add(papMesh);
+    return matchedMeshes;
+  }
+
+  /* ------------------------------------------------------------ */
+  /* 🫀 1. Clinical 3D Heart (Z-Anatomy Mesh Isolation)          */
+  /* ------------------------------------------------------------ */
+  private buildClinicalHeart() {
+    this.isolateOrganMeshes('cardiovascular', [
+      'heart',
+      'arteries_of_heart',
+      'valvular',
+      'aorta',
+      'pulmonary_trunk',
+    ]);
+
+    // Find Heartg node for lub-dub pulse animation
+    const cardio = this.systemModels.get('cardiovascular');
+    if (cardio) {
+      cardio.traverse((child) => {
+        if ((child.name || '').toLowerCase().includes('heartg')) {
+          this.heartNode = child;
+        }
+      });
     }
-
-    this.organFocusGroup.add(group);
-
-    // Anatomical 3D Pins
-    this.createPin({
-      id: 'aorta',
-      name: 'Aortic Arch',
-      category: 'Arterial Conduit',
-      position: new THREE.Vector3(0.0, 0.44, 0.0),
-      description: 'Pumps 5 liters of oxygenated blood per minute under 120 mmHg pressure to the systemic circulation.',
-    });
-
-    this.createPin({
-      id: 'left-ventricle',
-      name: 'Left Ventricle',
-      category: 'Systemic Myocardial Pump',
-      position: new THREE.Vector3(0.08, -0.16, 0.22),
-      description: 'Thickest chamber (10–12 mm wall) generating peak systolic pressure to drive systemic perfusion.',
-    });
-
-    this.createPin({
-      id: 'right-atrium',
-      name: 'Right Atrium & SA Node',
-      category: 'Cardiac Pacemaker',
-      position: new THREE.Vector3(-0.16, 0.20, 0.06),
-      description: 'Receives deoxygenated venous return from venae cavae; houses the Sinoatrial (SA) natural pacemaker pacing at ~72 bpm.',
-    });
 
     this.createPin({
       id: 'lad-artery',
       name: 'Left Anterior Descending (LAD)',
       category: 'Coronary Perfusion',
-      position: new THREE.Vector3(0.05, -0.06, 0.24),
-      description: 'The "widow-maker" artery supplying anterior ventricular wall and 50% of left ventricular myocardium.',
+      position: new THREE.Vector3(0.02, 0.41, 0.06),
+      description: 'The anterior interventricular artery supplies 50% of left ventricular myocardium.',
     });
 
     this.createPin({
-      id: 'pulmonary-trunk',
-      name: 'Pulmonary Trunk',
-      category: 'Pulmonary Arterial Flow',
-      position: new THREE.Vector3(-0.02, 0.32, 0.06),
-      description: 'Directs deoxygenated venous blood from right ventricle toward lungs at 25 mmHg systolic.',
+      id: 'aortic-arch',
+      name: 'Ascending Aorta & Arch',
+      category: 'Systemic Outflow',
+      position: new THREE.Vector3(0.01, 0.49, 0.04),
+      description: 'Receives stroke volume (~70 mL) during peak left ventricular systole at 120 mmHg.',
     });
 
-    // Camera view framing
-    this.targetLookAt.set(0, 0.02, 0);
-    this.targetCamPos.set(0, 0.08, 0.95);
+    this.createPin({
+      id: 'right-atrium',
+      name: 'Right Atrium & SA Node',
+      category: 'Pacemaker Axis',
+      position: new THREE.Vector3(-0.03, 0.43, 0.05),
+      description: 'Sinoatrial node generates spontaneous intrinsic action potentials at 60–100 bpm.',
+    });
+
+    this.createPin({
+      id: 'left-ventricle',
+      name: 'Left Ventricle Myocardium',
+      category: 'Pumping Chamber',
+      position: new THREE.Vector3(0.04, 0.40, 0.04),
+      description: 'Thick muscular wall generates high hydrostatic pressure for systemic circulation.',
+    });
+
+    this.targetLookAt.set(0.02, 0.43, 0.02);
+    this.targetCamPos.set(0.02, 0.43, 0.38);
     this.isLerpingCamera = true;
   }
 
   /* ------------------------------------------------------------ */
-  /* 🧠 2. High-Detail 3D Brain Builder                            */
+  /* 🧠 2. Clinical 3D Brain (Z-Anatomy Mesh Isolation)           */
   /* ------------------------------------------------------------ */
-  private buildHighDetailBrain() {
-    const group = new THREE.Group();
+  private buildClinicalBrain() {
+    this.isolateOrganMeshes('nervous', ['brain']);
 
-    // 1. Bilateral Cerebral Hemispheres (Left & Right) with Sulcal Fissures
-    [-0.13, 0.13].forEach((xOffset) => {
-      const hemiGeo = new THREE.SphereGeometry(0.26, 48, 48);
-      const pos = hemiGeo.attributes.position;
-      for (let i = 0; i < pos.count; i++) {
-        let x = pos.getX(i);
-        let y = pos.getY(i);
-        let z = pos.getZ(i);
-
-        // Procedural gyri & sulci wrinkles
-        const noise =
-          Math.sin(x * 24) * Math.cos(y * 22) * Math.sin(z * 24) * 0.014 +
-          Math.sin(y * 42) * Math.cos(z * 40) * 0.008;
-
-        // Shape into natural cerebral ellipsoid
-        x *= 0.85;
-        y *= 0.95;
-        z *= 1.25;
-
-        // Flatten medial hemispheric fissure
-        if ((xOffset < 0 && x > 0) || (xOffset > 0 && x < 0)) {
-          x *= 0.55;
+    // Enable synaptic glow on cerebral cortex
+    const nervous = this.systemModels.get('nervous');
+    if (nervous) {
+      nervous.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          if (
+            mesh.material instanceof THREE.MeshStandardMaterial ||
+            mesh.material instanceof THREE.MeshPhysicalMaterial
+          ) {
+            mesh.material.emissive = new THREE.Color(0x14b8a6);
+            mesh.material.emissiveIntensity = 0.35;
+            this.brainGlowMat = mesh.material as THREE.MeshPhysicalMaterial;
+          }
         }
-
-        pos.setXYZ(i, x + noise, y + noise, z + noise);
-      }
-      hemiGeo.computeVertexNormals();
-
-      const hemiMat = new THREE.MeshPhysicalMaterial({
-        color: 0xede3d0, // Warm cortical ivory
-        roughness: 0.35,
-        metalness: 0.08,
-        clearcoat: 0.7,
-        clearcoatRoughness: 0.25,
       });
-      const hemi = new THREE.Mesh(hemiGeo, hemiMat);
-      hemi.position.set(xOffset, 0.06, 0.0);
-      group.add(hemi);
-    });
-
-    // 2. Cerebellum (Posterior-inferior coordination arbor)
-    const cerebGeo = new THREE.SphereGeometry(0.15, 36, 36);
-    const cPos = cerebGeo.attributes.position;
-    for (let i = 0; i < cPos.count; i++) {
-      let x = cPos.getX(i) * 1.3;
-      let y = cPos.getY(i) * 0.75;
-      let z = cPos.getZ(i) * 0.9;
-      // Horizontal folia lines
-      const folia = Math.sin(y * 70) * 0.007;
-      cPos.setXYZ(i, x + folia, y, z + folia);
     }
-    cerebGeo.computeVertexNormals();
-    const cerebMat = new THREE.MeshPhysicalMaterial({
-      color: 0xdfd4be,
-      roughness: 0.45,
-      clearcoat: 0.4,
-    });
-    const cereb = new THREE.Mesh(cerebGeo, cerebMat);
-    cereb.position.set(0, -0.16, -0.16);
-    group.add(cereb);
 
-    // 3. Brainstem (Pons & Medulla descending to spinal axis)
-    const stemCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, -0.02, 0.0),
-      new THREE.Vector3(0, -0.14, -0.02),
-      new THREE.Vector3(0, -0.32, -0.05),
-    ]);
-    const stemGeo = new THREE.TubeGeometry(stemCurve, 24, 0.052, 20, false);
-    const stemMat = new THREE.MeshPhysicalMaterial({
-      color: 0xf5eee0,
-      roughness: 0.3,
-      clearcoat: 0.8,
-    });
-    group.add(new THREE.Mesh(stemGeo, stemMat));
-
-    // 4. Synaptic Neural Glow Halo
-    const glowGeo = new THREE.SphereGeometry(0.38, 32, 32);
-    const glowMat = new THREE.MeshPhysicalMaterial({
-      color: 0x14b8a6,
-      emissive: 0x14b8a6,
-      emissiveIntensity: 0.3,
-      transparent: true,
-      opacity: 0.12,
-      roughness: 0.1,
-    });
-    this.brainGlowMat = glowMat;
-    const glow = new THREE.Mesh(glowGeo, glowMat);
-    group.add(glow);
-
-    this.organFocusGroup.add(group);
-
-    // Anatomical Pins
     this.createPin({
-      id: 'prefrontal',
+      id: 'frontal-cortex',
       name: 'Prefrontal Cortex',
       category: 'Executive Function',
-      position: new THREE.Vector3(0, 0.18, 0.32),
-      description: 'Governs future planning, impulse inhibition, complex working memory, and social decision-making.',
+      position: new THREE.Vector3(0.0, 0.78, 0.06),
+      description: 'Orchestrates working memory, abstract reasoning, decision planning, and personality moderation.',
     });
 
     this.createPin({
-      id: 'motor-strip',
-      name: 'Primary Motor Cortex (M1)',
-      category: 'Voluntary Movement',
-      position: new THREE.Vector3(0.12, 0.28, 0.04),
-      description: 'Precentral gyrus containing Betz pyramidal neurons that send corticospinal motor commands to skeletal muscles.',
-    });
-
-    this.createPin({
-      id: 'visual-cortex',
-      name: 'Primary Visual Cortex (V1)',
-      category: 'Vision & Retinotopy',
-      position: new THREE.Vector3(0, 0.06, -0.34),
-      description: 'Brodmann area 17 along calcarine sulcus mapping contralateral visual fields into conscious sight.',
+      id: 'occipital-lobe',
+      name: 'Occipital Lobe (V1 / Brodmann 17)',
+      category: 'Sensory Vision',
+      position: new THREE.Vector3(0.0, 0.76, -0.08),
+      description: 'Primary visual cortex processing retinotopic orientation, spatial frequency, and color signals.',
     });
 
     this.createPin({
       id: 'cerebellum',
-      name: 'Cerebellum',
-      category: 'Motor Precision & Timing',
-      position: new THREE.Vector3(0, -0.16, -0.28),
-      description: 'Contains 69 billion neurons and Purkinje cells that compute real-time motor error correction at 50 Hz.',
+      name: 'Cerebellar Hemispheres',
+      category: 'Motor Coordination',
+      position: new THREE.Vector3(0.0, 0.71, -0.05),
+      description: 'Contains >50% of total brain neurons; calibrates micro-timing and vestibular equilibrium.',
     });
 
-    this.targetLookAt.set(0, 0.04, 0);
-    this.targetCamPos.set(0, 0.12, 1.05);
+    this.createPin({
+      id: 'brainstem-pons',
+      name: 'Brainstem & Pons',
+      category: 'Autonomic Vital Axis',
+      position: new THREE.Vector3(0.0, 0.69, -0.01),
+      description: 'Houses cardiorespiratory pacemaker nuclei, ascending reticular activating system, and cranial nerves.',
+    });
+
+    this.targetLookAt.set(0.0, 0.75, -0.01);
+    this.targetCamPos.set(0.0, 0.76, 0.42);
     this.isLerpingCamera = true;
   }
 
   /* ------------------------------------------------------------ */
-  /* 🫁 3. High-Detail 3D Lungs & Airway Builder                   */
+  /* 🫁 3. Clinical 3D Lungs & Airway (Z-Anatomy Mesh Isolation)  */
   /* ------------------------------------------------------------ */
-  private buildHighDetailLungs() {
-    const group = new THREE.Group();
+  private buildClinicalLungs() {
+    this.isolateOrganMeshes('organs', ['lung', 'trachea', 'bronch']);
 
-    // 1. Trachea with Cartilaginous C-Rings
-    const tracheaCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0.46, 0),
-      new THREE.Vector3(0, 0.16, 0),
-    ]);
-    const tracheaGeo = new THREE.TubeGeometry(tracheaCurve, 20, 0.038, 20, false);
-    const tracheaMat = new THREE.MeshPhysicalMaterial({
-      color: 0xe2e8f0,
-      roughness: 0.25,
-      clearcoat: 0.8,
-    });
-    group.add(new THREE.Mesh(tracheaGeo, tracheaMat));
-
-    // Cartilage rings
-    for (let y = 0.2; y <= 0.44; y += 0.03) {
-      const ringGeo = new THREE.TorusGeometry(0.04, 0.006, 12, 24);
-      const ringMesh = new THREE.Mesh(ringGeo, tracheaMat);
-      ringMesh.rotation.x = Math.PI / 2;
-      ringMesh.position.set(0, y, 0);
-      group.add(ringMesh);
+    // Find Lungsg node for respiration breathing animation
+    const organs = this.systemModels.get('organs');
+    if (organs) {
+      organs.traverse((child) => {
+        if ((child.name || '').toLowerCase().includes('lungsg')) {
+          this.lungsNode = child;
+        }
+      });
     }
 
-    // 2. Primary Bronchial Bifurcation (Carina)
-    const rightBronchCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0.16, 0),
-      new THREE.Vector3(-0.08, 0.08, -0.02),
-    ]);
-    const leftBronchCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0.16, 0),
-      new THREE.Vector3(0.11, 0.09, -0.02),
-    ]);
-    const bronchMat = new THREE.MeshPhysicalMaterial({ color: 0xd97706, roughness: 0.3 });
-    group.add(new THREE.Mesh(new THREE.TubeGeometry(rightBronchCurve, 16, 0.022, 16, false), bronchMat));
-    group.add(new THREE.Mesh(new THREE.TubeGeometry(leftBronchCurve, 16, 0.02, 16, false), bronchMat));
-
-    // 3. Right Lung (3 Lobes: Superior, Middle, Inferior)
-    const rightLungGeo = new THREE.SphereGeometry(0.26, 36, 36);
-    const rPos = rightLungGeo.attributes.position;
-    for (let i = 0; i < rPos.count; i++) {
-      let x = rPos.getX(i) * 0.85;
-      let y = rPos.getY(i) * 1.5;
-      let z = rPos.getZ(i) * 0.95;
-      // Flatten medial mediastinal side
-      if (x > 0) x *= 0.65;
-      rPos.setXYZ(i, x, y, z);
-    }
-    rightLungGeo.computeVertexNormals();
-
-    const lungMat = new THREE.MeshPhysicalMaterial({
-      color: 0xbe7c72, // Warm pulmonary tissue pink/red
-      roughness: 0.45,
-      clearcoat: 0.6,
-      clippingPlanes: this.isCutaway ? [this.cutawayPlane] : [],
-    });
-    const rightLung = new THREE.Mesh(rightLungGeo, lungMat);
-    rightLung.position.set(-0.21, 0.02, 0);
-    group.add(rightLung);
-
-    // 4. Left Lung (2 Lobes with Cardiac Notch)
-    const leftLungGeo = new THREE.SphereGeometry(0.24, 36, 36);
-    const lPos = leftLungGeo.attributes.position;
-    for (let i = 0; i < lPos.count; i++) {
-      let x = lPos.getX(i) * 0.8;
-      let y = lPos.getY(i) * 1.45;
-      let z = lPos.getZ(i) * 0.95;
-      // Medial cardiac notch indentation
-      if (x < 0 && y < 0) {
-        x *= 0.45;
-        z *= 0.75;
-      }
-      lPos.setXYZ(i, x, y, z);
-    }
-    leftLungGeo.computeVertexNormals();
-    const leftLung = new THREE.Mesh(leftLungGeo, lungMat);
-    leftLung.position.set(0.21, 0.02, 0);
-    group.add(leftLung);
-
-    this.lungsMeshGroup = group;
-    this.organFocusGroup.add(group);
-
-    // Pins
     this.createPin({
-      id: 'carina',
-      name: 'Carina & Primary Bronchi',
-      category: 'Airway Conduit',
-      position: new THREE.Vector3(0, 0.16, 0.06),
-      description: 'Bifurcation point of the trachea heavily lined with cough reflex stretch receptors.',
+      id: 'trachea-carina',
+      name: 'Trachea & Carina Bifurcation',
+      category: 'Airway Conduction',
+      position: new THREE.Vector3(0.0, 0.52, 0.02),
+      description: 'Reinforced by 16–20 hyaline cartilage rings, bifurcates into primary left and right bronchi at T4/T5.',
     });
 
     this.createPin({
-      id: 'right-lung',
-      name: 'Right Lung (3 Lobes)',
-      category: 'Pulmonary Parenchyma',
-      position: new THREE.Vector3(-0.28, 0.08, 0.16),
-      description: 'Contains Superior, Middle, and Inferior lobes; receives ~55% of pulmonary ventilation.',
+      id: 'right-superior-lobe',
+      name: 'Right Superior Lobe',
+      category: 'Pulmonary Ventilation',
+      position: new THREE.Vector3(-0.06, 0.46, 0.04),
+      description: 'Tri-lobar right lung provides 55% of alveolar gas diffusion capacity across 300 million alveoli.',
     });
 
     this.createPin({
-      id: 'cardiac-notch',
+      id: 'left-cardiac-notch',
       name: 'Left Lung & Cardiac Notch',
       category: 'Pulmonary Anatomy',
-      position: new THREE.Vector3(0.18, -0.06, 0.16),
-      description: 'Anatomical indentation accommodating the apex of the heart; divided by oblique fissure.',
+      position: new THREE.Vector3(0.06, 0.41, 0.05),
+      description: 'Accommodates the pericardial cardiac apex; features lingular segment analogous to middle lobe.',
     });
 
-    this.targetLookAt.set(0, 0.1, 0);
-    this.targetCamPos.set(0, 0.15, 1.25);
+    this.createPin({
+      id: 'diaphragmatic-base',
+      name: 'Diaphragmatic Base',
+      category: 'Inspiratory Mechanics',
+      position: new THREE.Vector3(-0.05, 0.35, 0.03),
+      description: 'Phrenic-nerve driven diaphragmatic descent increases thoracic volume, generating -8 cmH2O pleural pressure.',
+    });
+
+    this.targetLookAt.set(0.0, 0.43, 0.01);
+    this.targetCamPos.set(0.0, 0.43, 0.62);
     this.isLerpingCamera = true;
   }
 
   /* ------------------------------------------------------------ */
-  /* 🧪 4. High-Detail 3D Liver & Gallbladder Builder              */
+  /* 🧪 4. Clinical 3D Liver & Biliary (Z-Anatomy Mesh Isolation) */
   /* ------------------------------------------------------------ */
-  private buildHighDetailLiver() {
-    const group = new THREE.Group();
+  private buildClinicalLiver() {
+    this.isolateOrganMeshes('organs', ['liver', 'gallbladder', 'biliary', 'cystic']);
 
-    // 1. Liver Parenchyma (Large Wedge Shape with Right & Left Lobes)
-    const liverGeo = new THREE.SphereGeometry(0.28, 48, 48);
-    const pos = liverGeo.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      let x = pos.getX(i);
-      let y = pos.getY(i);
-      let z = pos.getZ(i);
-
-      // Wedge shaped taper (thick right lobe, thin left wedge)
-      x *= 1.4;
-      y *= 0.85;
-      z *= 0.95;
-
-      if (x > 0) {
-        // Left lobe taper
-        y *= 1.0 - (x * 0.5);
-        z *= 1.0 - (x * 0.4);
-      }
-      if (y < 0) {
-        // Flatten visceral inferior surface
-        y *= 0.6;
-      }
-      pos.setXYZ(i, x, y, z);
-    }
-    liverGeo.computeVertexNormals();
-
-    const liverMat = new THREE.MeshPhysicalMaterial({
-      color: 0x7c2d12, // Rich dark hepatic reddish-brown
-      roughness: 0.35,
-      metalness: 0.05,
-      clearcoat: 0.75,
-      clearcoatRoughness: 0.2,
-    });
-    const liverMesh = new THREE.Mesh(liverGeo, liverMat);
-    group.add(liverMesh);
-
-    // 2. Emerald Green Gallbladder
-    const gallGeo = new THREE.SphereGeometry(0.06, 24, 24);
-    const gPos = gallGeo.attributes.position;
-    for (let i = 0; i < gPos.count; i++) {
-      gPos.setXYZ(i, gPos.getX(i) * 0.7, gPos.getY(i) * 1.5, gPos.getZ(i) * 0.7);
-    }
-    gallGeo.computeVertexNormals();
-    const gallMat = new THREE.MeshPhysicalMaterial({
-      color: 0x15803d, // Vibrant emerald bile green
-      roughness: 0.25,
-      clearcoat: 0.9,
-    });
-    const gallbladder = new THREE.Mesh(gallGeo, gallMat);
-    gallbladder.position.set(-0.08, -0.14, 0.14);
-    gallbladder.rotation.z = 0.35;
-    group.add(gallbladder);
-
-    // 3. Hepatic Portal Vein & Hepatic Artery
-    const portalCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-0.02, -0.32, 0.04),
-      new THREE.Vector3(-0.01, -0.12, 0.06),
-    ]);
-    const portalGeo = new THREE.TubeGeometry(portalCurve, 16, 0.025, 16, false);
-    const portalMat = new THREE.MeshPhysicalMaterial({ color: 0x3b82f6, roughness: 0.3 });
-    group.add(new THREE.Mesh(portalGeo, portalMat));
-
-    const arteryCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0.02, -0.30, 0.06),
-      new THREE.Vector3(0.01, -0.11, 0.07),
-    ]);
-    const arteryMat = new THREE.MeshPhysicalMaterial({ color: 0xdc2626, roughness: 0.3 });
-    group.add(new THREE.Mesh(new THREE.TubeGeometry(arteryCurve, 16, 0.016, 16, false), arteryMat));
-
-    this.organFocusGroup.add(group);
-
-    // Pins
     this.createPin({
-      id: 'right-lobe',
-      name: 'Right Hepatic Lobe',
-      category: 'Metabolic Parenchyma',
-      position: new THREE.Vector3(-0.18, 0.08, 0.16),
-      description: 'Houses Couinaud segments V, VI, VII, and VIII, executing bulk drug detoxification and glycogen storage.',
+      id: 'right-hepatic-lobe',
+      name: 'Right Hepatic Lobe (Couinaud V–VIII)',
+      category: 'Metabolic Clearance',
+      position: new THREE.Vector3(-0.06, 0.31, 0.04),
+      description: 'Comprises 65% of hepatic parenchyma; detoxifies portal venous blood via cytochrome P450 monooxygenases.',
     });
 
     this.createPin({
-      id: 'gallbladder',
+      id: 'left-hepatic-lobe',
+      name: 'Left Hepatic Lobe (Segments II–IV)',
+      category: 'Glycogen Synthesis',
+      position: new THREE.Vector3(0.05, 0.31, 0.04),
+      description: 'Synthesizes albumin, prothrombin, and clotting factors I, II, VII, IX, and X.',
+    });
+
+    this.createPin({
+      id: 'gallbladder-fundus',
       name: 'Gallbladder & Cystic Duct',
-      category: 'Biliary System',
-      position: new THREE.Vector3(-0.08, -0.16, 0.18),
-      description: 'Stores and concentrates bile 10-fold, contracting on cholecystokinin (CCK) stimulation after fatty meals.',
+      category: 'Biliary Storage',
+      position: new THREE.Vector3(-0.03, 0.26, 0.05),
+      description: 'Concentrates hepatic bile 5- to 10-fold; contracts in response to cholecystokinin (CCK) post-lipids.',
     });
 
     this.createPin({
       id: 'porta-hepatis',
-      name: 'Porta Hepatis (Portal Triad)',
-      category: 'Vascular Inflow Corridor',
-      position: new THREE.Vector3(0, -0.18, 0.08),
-      description: 'Conduit entering liver holding Portal Vein (75% blood), Hepatic Artery (25% blood), and Bile Duct.',
+      name: 'Porta Hepatis & Falciform',
+      category: 'Vascular Gateway',
+      position: new THREE.Vector3(0.0, 0.32, 0.05),
+      description: 'Gateway for hepatic portal vein (75% blood inflow), hepatic artery proper, and common hepatic duct.',
     });
 
-    this.targetLookAt.set(0, 0, 0);
-    this.targetCamPos.set(0, 0.05, 1.05);
+    this.targetLookAt.set(-0.01, 0.30, 0.02);
+    this.targetCamPos.set(-0.01, 0.30, 0.50);
     this.isLerpingCamera = true;
   }
 
   /* ------------------------------------------------------------ */
-  /* 🧽 5. High-Detail 3D Kidneys & Urinary System                 */
+  /* 🧽 5. Clinical 3D Kidneys & Urinary (Z-Anatomy Mesh Isolation)*/
   /* ------------------------------------------------------------ */
-  private buildHighDetailKidneys() {
-    const group = new THREE.Group();
+  private buildClinicalKidneys() {
+    this.isolateOrganMeshes('organs', ['kidney', 'renal', 'ureter', 'bladder']);
 
-    // 1. Bilateral Bean-Shaped Kidneys (Left & Right)
-    [-0.22, 0.22].forEach((xOffset, idx) => {
-      const kidneyGeo = new THREE.SphereGeometry(0.14, 36, 36);
-      const kPos = kidneyGeo.attributes.position;
-      for (let i = 0; i < kPos.count; i++) {
-        let x = kPos.getX(i);
-        let y = kPos.getY(i) * 1.5;
-        let z = kPos.getZ(i) * 0.75;
-        // Medial hilum concavity (bean indentation)
-        if ((xOffset < 0 && x > 0) || (xOffset > 0 && x < 0)) {
-          x *= 0.45;
-        }
-        kPos.setXYZ(i, x, y, z);
-      }
-      kidneyGeo.computeVertexNormals();
-
-      const kidneyMat = new THREE.MeshPhysicalMaterial({
-        color: 0x831843, // Rich cortical maroon
-        roughness: 0.35,
-        clearcoat: 0.8,
-      });
-      const kidneyMesh = new THREE.Mesh(kidneyGeo, kidneyMat);
-      // Right kidney sits slightly lower due to liver
-      kidneyMesh.position.set(xOffset, idx === 0 ? -0.03 : 0.02, 0);
-      group.add(kidneyMesh);
-
-      // Adrenal Glands (Golden suprarenal caps)
-      const adrenalGeo = new THREE.ConeGeometry(0.045, 0.06, 16);
-      const adrenalMat = new THREE.MeshPhysicalMaterial({ color: 0xd97706, roughness: 0.3 });
-      const adrenal = new THREE.Mesh(adrenalGeo, adrenalMat);
-      adrenal.position.set(xOffset, (idx === 0 ? -0.03 : 0.02) + 0.18, 0);
-      group.add(adrenal);
-
-      // Descending Ureters
-      const ureterCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(xOffset * 0.6, idx === 0 ? -0.03 : 0.02, 0),
-        new THREE.Vector3(xOffset * 0.45, -0.22, 0.02),
-        new THREE.Vector3(xOffset * 0.25, -0.42, 0.04),
-        new THREE.Vector3(0, -0.52, 0.05),
-      ]);
-      const ureterGeo = new THREE.TubeGeometry(ureterCurve, 20, 0.012, 12, false);
-      const ureterMat = new THREE.MeshPhysicalMaterial({ color: 0xfef08a, roughness: 0.3 });
-      group.add(new THREE.Mesh(ureterGeo, ureterMat));
-    });
-
-    // 2. Urinary Bladder
-    const bladderGeo = new THREE.SphereGeometry(0.12, 32, 32);
-    const bladderMat = new THREE.MeshPhysicalMaterial({
-      color: 0xd97706,
-      roughness: 0.4,
-      clearcoat: 0.7,
-    });
-    const bladder = new THREE.Mesh(bladderGeo, bladderMat);
-    bladder.position.set(0, -0.54, 0.06);
-    bladder.scale.set(1.1, 0.9, 1.0);
-    group.add(bladder);
-
-    this.organFocusGroup.add(group);
-
-    // Pins
     this.createPin({
-      id: 'renal-cortex',
-      name: 'Renal Cortex & Glomeruli',
-      category: 'Filtration Unit',
-      position: new THREE.Vector3(-0.28, 0.06, 0.08),
-      description: 'Holds 1 million nephrons per kidney filtering 180 liters of blood plasma daily into primary urine.',
+      id: 'right-renal-cortex',
+      name: 'Right Renal Cortex & Glomeruli',
+      category: 'Glomerular Filtration',
+      position: new THREE.Vector3(-0.07, 0.29, -0.01),
+      description: 'Contains ~1,000,000 nephrons filtering 180 liters of plasma daily at a GFR of 125 mL/min.',
     });
 
     this.createPin({
-      id: 'adrenal-cap',
-      name: 'Suprarenal Adrenal Gland',
-      category: 'Endocrine Pacing',
-      position: new THREE.Vector3(-0.22, 0.22, 0.04),
-      description: 'Synthesizes aldosterone, cortisol, and discharges immediate fight-or-flight adrenaline.',
+      id: 'left-renal-hilum',
+      name: 'Left Renal Hilum & Pelvis',
+      category: 'Renal Vasculature',
+      position: new THREE.Vector3(0.07, 0.29, -0.01),
+      description: 'Site of renal artery entry and renal vein drainage, delivering 20% of resting cardiac output.',
     });
 
     this.createPin({
-      id: 'bladder',
-      name: 'Urinary Bladder & Trigone',
-      category: 'Excretory Reservoir',
-      position: new THREE.Vector3(0, -0.54, 0.16),
-      description: 'Distensible detrusor muscular container storing 400–600 mL of urine prior to parasympathetic voiding.',
+      id: 'ureters-bilateral',
+      name: 'Retroperitoneal Ureters',
+      category: 'Urine Peristalsis',
+      position: new THREE.Vector3(0.04, 0.21, 0.0),
+      description: 'Smooth muscle peristaltic waves propagate concentrated urine down into the trigone.',
     });
 
-    this.targetLookAt.set(0, -0.15, 0);
-    this.targetCamPos.set(0, -0.1, 1.25);
+    this.createPin({
+      id: 'urinary-bladder',
+      name: 'Urinary Bladder & Detrusor',
+      category: 'Storage & Micturition',
+      position: new THREE.Vector3(0.0, 0.12, 0.04),
+      description: 'Detrusor muscle accommodates 400–600 mL under low intravesical pressure before parasympathetic voiding.',
+    });
+
+    this.targetLookAt.set(0.0, 0.23, -0.01);
+    this.targetCamPos.set(0.0, 0.23, 0.48);
     this.isLerpingCamera = true;
   }
 
   /* ------------------------------------------------------------ */
-  /* 🥨 6. High-Detail 3D Digestive System & Stomach               */
+  /* 🥨 6. Clinical 3D Digestive System (Z-Anatomy Mesh Isolation) */
   /* ------------------------------------------------------------ */
-  private buildHighDetailDigestive() {
-    const group = new THREE.Group();
+  private buildClinicalDigestive() {
+    this.isolateOrganMeshes('organs', ['stomach', 'pancreas', 'duodenum']);
 
-    // 1. J-Shaped Stomach (Fundus, Body, Antrum, Pylorus)
-    const stomachCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0.04, 0.28, -0.02), // Esophagus inlet
-      new THREE.Vector3(0.14, 0.24, 0.02),  // Fundus dome
-      new THREE.Vector3(0.18, 0.08, 0.04),  // Greater curvature
-      new THREE.Vector3(0.12, -0.06, 0.04), // Body
-      new THREE.Vector3(-0.02, -0.08, 0.03),// Pyloric antrum
-      new THREE.Vector3(-0.08, -0.02, 0.01),// Duodenum junction
-    ]);
-    const stomachGeo = new THREE.TubeGeometry(stomachCurve, 32, 0.09, 24, false);
-    const stomachMat = new THREE.MeshPhysicalMaterial({
-      color: 0x9f1239, // Gastric mucosa crimson
-      roughness: 0.35,
-      clearcoat: 0.8,
-    });
-    group.add(new THREE.Mesh(stomachGeo, stomachMat));
-
-    // 2. Duodenal C-Loop (wraps around head of pancreas)
-    const duodCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-0.08, -0.02, 0.01),
-      new THREE.Vector3(-0.14, -0.08, 0.02),
-      new THREE.Vector3(-0.12, -0.18, 0.02),
-      new THREE.Vector3(-0.02, -0.22, 0.02),
-    ]);
-    const duodMat = new THREE.MeshPhysicalMaterial({ color: 0xb45309, roughness: 0.35 });
-    group.add(new THREE.Mesh(new THREE.TubeGeometry(duodCurve, 20, 0.04, 16, false), duodMat));
-
-    // 3. Pancreas (Tucked in C-loop)
-    const pancGeo = new THREE.CylinderGeometry(0.025, 0.04, 0.18, 16);
-    const pancMat = new THREE.MeshPhysicalMaterial({ color: 0xd97706, roughness: 0.45 });
-    const panc = new THREE.Mesh(pancGeo, pancMat);
-    panc.rotation.z = Math.PI / 2.3;
-    panc.position.set(0.01, -0.11, 0.01);
-    group.add(panc);
-
-    this.organFocusGroup.add(group);
-
-    // Pins
     this.createPin({
-      id: 'stomach-fundus',
-      name: 'Gastric Fundus & Body',
-      category: 'Enzymatic Digestion',
-      position: new THREE.Vector3(0.16, 0.16, 0.14),
-      description: 'Parietal cells secrete 2 liters of hydrochloric acid (pH 1.5) and intrinsic factor daily.',
+      id: 'gastric-fundus',
+      name: 'Gastric Fundus & Greater Curvature',
+      category: 'Acid & Enzymatic Churn',
+      position: new THREE.Vector3(0.06, 0.32, 0.05),
+      description: 'Parietal cells secrete HCl (pH 1.5–2.0) and intrinsic factor; chief cells synthesize pepsinogen.',
     });
 
     this.createPin({
-      id: 'duodenum',
-      name: 'Duodenum & Pancreas',
-      category: 'Nutrient Assimilation',
-      position: new THREE.Vector3(-0.08, -0.12, 0.1),
-      description: 'Bicarbonate neutralization and insulin secretion from pancreatic Islets of Langerhans.',
+      id: 'pyloric-sphincter',
+      name: 'Pyloric Antrum & Sphincter',
+      category: 'Gastric Emptying',
+      position: new THREE.Vector3(-0.01, 0.28, 0.05),
+      description: 'Muscular sphincter metering acidic chyme delivery into the duodenum at 2–3 mL per peristaltic wave.',
     });
 
-    this.targetLookAt.set(0, 0.02, 0);
-    this.targetCamPos.set(0, 0.05, 1.05);
+    this.createPin({
+      id: 'pancreatic-parenchyma',
+      name: 'Pancreas (Endocrine & Exocrine)',
+      category: 'Enzyme & Hormone Axis',
+      position: new THREE.Vector3(0.02, 0.29, 0.02),
+      description: 'Acinar cells secrete trypsinogen, lipase, and amylase; Islets of Langerhans secrete insulin and glucagon.',
+    });
+
+    this.createPin({
+      id: 'duodenal-c-loop',
+      name: 'Duodenum (C-Loop)',
+      category: 'Bicarbonate Neutralization',
+      position: new THREE.Vector3(-0.03, 0.28, 0.04),
+      description: 'Receives bile and pancreatic juices via the Ampulla of Vater (Sphincter of Oddi) to neutralize gastric acid.',
+    });
+
+    this.targetLookAt.set(0.04, 0.30, 0.04);
+    this.targetCamPos.set(0.04, 0.30, 0.45);
     this.isLerpingCamera = true;
   }
 
@@ -1289,7 +902,7 @@ export class AnatomyAtlasScene {
     const time = this.clock.getElapsedTime();
 
     // 1. Dual-Phase Lub-Dub Cardiac Cycle Animation
-    if (this.isBeating && this.heartVentriclesMesh) {
+    if (this.isBeating && this.heartNode) {
       const beatFreq = 1.2; // 72 bpm
       const cycle = (time * beatFreq) % 1.0;
       let scale = 1.0;
@@ -1301,14 +914,16 @@ export class AnatomyAtlasScene {
         scale = 1.0 + Math.sin(((cycle - 0.22) / 0.16) * Math.PI) * 0.05;
       }
 
-      this.heartVentriclesMesh.scale.set(scale, scale * 1.02, scale);
+      // Base scale for Heartg in Z-Anatomy is 5.0
+      this.heartNode.scale.set(5.0 * scale, 5.0 * scale * 1.02, 5.0 * scale);
     }
 
     // 2. Respiration Breathing Cycle Animation
-    if (this.isBreathing && this.lungsMeshGroup) {
+    if (this.isBreathing && this.lungsNode) {
       const breathPhase = Math.sin(time * 1.4); // 14 breaths / min
       const expansion = 1.0 + (breathPhase + 1.0) * 0.035;
-      this.lungsMeshGroup.scale.set(expansion, expansion * 1.02, expansion);
+      // Base scale for Lungsg in Z-Anatomy is 0.8
+      this.lungsNode.scale.set(0.8 * expansion, 0.8 * expansion * 1.02, 0.8 * expansion);
     }
 
     // 3. Brain Synaptic Pulse Glow
