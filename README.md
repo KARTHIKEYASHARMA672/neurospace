@@ -25,27 +25,27 @@
 
 ## 🖼️ Verified Visual UI Gallery
 
-> 📸 *All 8 visual artifacts below are verified live screenshots rendered using Playwright WebGL Chromium headless suite (`1600×900`) against the production deployment.*
+> 📸 *All 8 visual artifacts below are verified live screenshots rendered using Playwright WebGL Chromium headless suite against the production build with Meshopt-decoded Z-Anatomy 3D models.*
 
-| 01 — Full Multi-System X-Ray Hologram | 02 — Skeletal System (Axial & Appendicular) |
+| 01 — Heart & Ventricles (3D Focused Anatomical View) | 02 — Full Multi-System X-Ray Hologram |
 | :---: | :---: |
-| ![01 Multi-System X-Ray](./screenshots/01_humanome_xray_multisystem_composite.png) | ![02 Skeletal System](./screenshots/02_skeletal_axial_appendicular_system.png) |
-| *Composite multi-layer X-Ray view showing complete human skeletal frame, visceral organs (liver, lungs, heart, kidneys), and full muscular/vascular envelope.* | *Isolated skeletal view displaying 206 articulated bones: cranial vault, cervical-thoracic-lumbar spine, rib cage, and appendicular extremities.* |
+| ![01 Heart Ventricles Focused](./screenshots/01_heart_ventricles_focused_3d.png) | ![02 Multi-System X-Ray](./screenshots/02_humanome_xray_multisystem_composite.png) |
+| *Close-up 3D target lock on the 4-chambered human heart, ascending aorta, aortic arch, and coronary circulation.* | *Composite multi-layer X-Ray view showing complete human skeletal frame, visceral organs, and vascular envelope.* |
 
-| 03 — Cardiovascular & Arterial Network | 04 — Computed Tomography (CT) Mode |
+| 03 — Photoreal Anatomical Standard Mode | 04 — Liver & Hepatic Couinaud Segments |
 | :---: | :---: |
-| ![03 Cardiovascular Network](./screenshots/03_cardiovascular_arterial_photoreal.png) | ![04 Computed Tomography CT](./screenshots/04_computed_tomography_radiological_ct.png) |
-| *High-definition vascular tree highlighting aortic arch, carotid bifurcation, coronary circulation, and systemic arterial/venous vasculature.* | *Radiographic bone density attenuation filter simulating medical CT scans with diagnostic high-contrast bone and soft-tissue absorption.* |
+| ![03 Photoreal Mode](./screenshots/03_photoreal_anatomical_standard.png) | ![04 Liver Focused](./screenshots/04_liver_hepatic_segments_focused.png) |
+| *True-to-life medical shading reproducing physiological tissue colors (crimson muscles, ivory bone, deep red liver, azure veins).* | *Deep target lock on the liver, gallbladder, biliary ducts, and 8 Couinaud metabolic segments.* |
 
-| 05 — Magnetic Resonance Imaging (MRI) Mode | 06 — Signal Propagation: Spinal Reflex Arc |
+| 05 — Brain & Cerebral Cortex 3D Focus | 06 — Computed Tomography (CT) Radiographic Mode |
 | :---: | :---: |
-| ![05 MRI Mode](./screenshots/05_magnetic_resonance_imaging_mri.png) | ![06 Signal Propagation](./screenshots/06_signal_propagation_spinal_reflex.png) |
-| *T1/T2 diagnostic tissue contrast shader emphasizing neural tracts, soft tissue margins, fluid boundaries, and internal visceral anatomy.* | *Live biophysical action potential cascade: noxious foot stimulus triggering 15 ms polysynaptic spinal withdrawal reflex & 200 ms spinothalamic pain ascent.* |
+| ![05 Brain Focus](./screenshots/05_brain_cerebral_cortex_focused.png) | ![06 Computed Tomography CT](./screenshots/06_computed_tomography_ct_mode.png) |
+| *Cranial vault zoom displaying cerebrum, cortical lobes, brainstem, and upper spinal cord tract.* | *Radiographic bone density attenuation filter simulating clinical CT scans with diagnostic high-contrast bone and soft-tissue absorption.* |
 
-| 07 — Neurological Scenarios & Pathology Engine | 08 — Live Telemetry, EEG Power Bands & Neurotransmitters |
+| 07 — Magnetic Resonance Imaging (MRI) Mode | 08 — Live Telemetry, EEG Power Bands & Neurotransmitters |
 | :---: | :---: |
-| ![07 Neurological Scenarios](./screenshots/07_neurological_scenarios_pathology.png) | ![08 Live Telemetry](./screenshots/08_live_eeg_telemetry_neurotransmitters.png) |
-| *Interactive simulation of 8 clinical pathologies including Temporal Lobe Epilepsy, Alzheimer's Neurodegeneration, Parkinson's Tremor, and Ischemic Stroke.* | *Continuous 60 Hz synthetic EEG oscilloscope with 5 Fourier spectral bands (Delta to Gamma) and 6 clinical neurotransmitter concentration gauges.* |
+| ![07 MRI Mode](./screenshots/07_magnetic_resonance_imaging_mri_mode.png) | ![08 Live Telemetry](./screenshots/08_live_eeg_telemetry_neurotransmitters.png) |
+| *T1/T2 diagnostic tissue contrast shader emphasizing neural tracts, soft tissue margins, fluid boundaries, and internal visceral anatomy.* | *Continuous 60 Hz synthetic EEG oscilloscope with 5 Fourier spectral bands (Delta to Gamma) and 6 clinical neurotransmitter concentration gauges.* |
 
 ---
 

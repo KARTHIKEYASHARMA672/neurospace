@@ -10,10 +10,12 @@ import {
   Eye,
   Sliders,
   FlaskConical,
+  Target,
+  Maximize2,
 } from 'lucide-react';
 import TopBar from './components/TopBar';
 import Sidebar, { type Mode } from './components/Sidebar';
-import HumanomeSystemsPanel from './components/HumanomeSystemsPanel';
+import HumanomeSystemsPanel, { MAJOR_HUMAN_ORGANS } from './components/HumanomeSystemsPanel';
 import UnifiedSignalsPanel, { type UnifiedSignalLog } from './components/UnifiedSignalsPanel';
 import ScenarioPanel from './components/ScenarioPanel';
 import NeuroAIPanel, { type ChatMessage } from './components/NeuroAIPanel';
@@ -24,6 +26,7 @@ import {
   type AnatomySystemId,
   type RenderingViewMode,
 } from './data/anatomySystems';
+import type { ViewMode } from './data/bodySystems';
 import { PATHWAYS, type NeuralPathway } from './data/pathways';
 import { FULL_BODY_CASCADES, type FullBodyNeuralCascade } from './data/bodyCascades';
 import { askNeuroAI } from './data/knowledge';
@@ -48,6 +51,7 @@ const TICKER_FACTS = [
 export default function App() {
   const [mode, setMode] = useState<Mode>('explore');
   const [viewMode, setViewMode] = useState<RenderingViewMode>('xray');
+  const [topBarViewMode, setTopBarViewMode] = useState<ViewMode>('fullbody');
 
   const [activeSystems, setActiveSystems] = useState<Record<AnatomySystemId, boolean>>({
     skeleton: true,
@@ -60,13 +64,14 @@ export default function App() {
 
   const [systemOpacities, setSystemOpacities] = useState<Record<AnatomySystemId, number>>({
     skeleton: 0.95,
-    muscular: 0.28,
+    muscular: 0.25,
     nervous: 1.0,
     cardiovascular: 0.85,
-    organs: 0.55,
+    organs: 0.75,
     skin: 0.12,
   });
 
+  const [selectedOrganKey, setSelectedOrganKey] = useState<string | null>('heart');
   const [selectedStructure, setSelectedStructure] = useState<{ name: string; system: string } | null>(null);
 
   const [scenarioId, setScenarioId] = useState('baseline');
@@ -97,6 +102,34 @@ export default function App() {
   const [pending, setPending] = useState(false);
   const [hasCloudKey, setHasCloudKey] = useState(() => !!localStorage.getItem('neurospace.openai.key'));
 
+  /* ---------------- Organ Selection & Camera Focus ---------------- */
+  const handleSelectOrgan = useCallback((key: string) => {
+    setSelectedOrganKey(key);
+    if (sceneRef.current) {
+      sceneRef.current.focusOnOrgan(key);
+    }
+  }, []);
+
+  const handleResetCamera = useCallback(() => {
+    setSelectedOrganKey(null);
+    if (sceneRef.current) {
+      sceneRef.current.resetToFullBody();
+    }
+  }, []);
+
+  const handleTopBarViewChange = useCallback((newMode: ViewMode) => {
+    setTopBarViewMode(newMode);
+    if (newMode === 'fullbody') {
+      handleResetCamera();
+    } else if (newMode === 'brain') {
+      handleSelectOrgan('brain');
+    } else if (newMode === 'nervous') {
+      handleSelectOrgan('nervous');
+    } else if (newMode === 'organs') {
+      handleSelectOrgan('heart');
+    }
+  }, [handleResetCamera, handleSelectOrgan]);
+
   /* ---------------- 3D Scene Lifecycle ---------------- */
   useEffect(() => {
     if (!containerRef.current) return;
@@ -106,6 +139,13 @@ export default function App() {
     scene.onHover = (info) => setHoverInfo(info);
     scene.onStructureClick = (name, system) => {
       setSelectedStructure({ name, system });
+      const nl = name.toLowerCase();
+      const matched = MAJOR_HUMAN_ORGANS.find((o) =>
+        nl.includes(o.key) || o.name.toLowerCase().includes(nl.split(' ')[0])
+      );
+      if (matched) {
+        setSelectedOrganKey(matched.key);
+      }
     };
 
     scene.setViewMode('xray');
@@ -205,19 +245,17 @@ export default function App() {
       setPending(true);
 
       const res = askNeuroAI(queryText);
+      const aiReplyText = res.entry
+        ? res.entry.answer
+        : `Clinical & Anatomical Analysis: "${queryText}". The human physiological architecture integrates multiple autonomic and visceral pathways connecting the central nervous system to metabolic and organ tissues.`;
+
       setPending(false);
-
-      const replyText = res.entry
-        ? `${res.entry.title}\n\n${res.entry.answer}`
-        : `Clinical & Anatomical Evaluation of "${queryText}": This biological system functions within optimal homeostatic physiological limits. Anatomical tissue density, motor innervation, blood supply and visceral reflex arcs coordinate to sustain human life.`;
-
       setMessages((prev) => [
         ...prev,
         {
           id: msgId.current++,
           role: 'ai',
-          text: replyText,
-          confidence: res.confidence,
+          text: aiReplyText,
           ts: ts(),
           source: 'local',
         },
@@ -226,73 +264,36 @@ export default function App() {
     [],
   );
 
+  const activeOrganObj = useMemo(
+    () => MAJOR_HUMAN_ORGANS.find((o) => o.key === selectedOrganKey) || null,
+    [selectedOrganKey],
+  );
+
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-void text-ink font-display">
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-void font-sans text-ink antialiased">
       {/* Top Navigation Bar */}
-      <header className="relative z-30 flex h-14 shrink-0 items-center justify-between border-b hairline bg-abyss/90 px-3 backdrop-blur-md sm:px-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md border border-synapse/40 bg-synapse/15 text-synapse shadow-[0_0_12px_rgba(201,169,97,0.35)]">
-            <Activity size={18} />
-          </div>
-          <div className="leading-tight">
-            <div className="flex items-center gap-2">
-              <h1 className="font-display text-[15px] font-bold tracking-[0.18em] text-ink">
-                NEURO<span className="text-synapse">SPACE</span>
-              </h1>
-              <span className="hidden rounded-sm border border-synapse/30 bg-synapse/10 px-1.5 py-[1px] font-mono text-[8px] tracking-[0.22em] text-synapse md:inline-block">
-                HUMANOME 3D MEDICAL ATLAS
-              </span>
-            </div>
-            <p className="hidden font-mono text-[7.5px] uppercase tracking-[0.24em] text-mute sm:block">
-              Interactive 3D Skeleton · Muscular · Nervous · Cardiovascular · Visceral Organs · Skin
-            </p>
-          </div>
-        </div>
+      <TopBar viewMode={topBarViewMode} onViewModeChange={handleTopBarViewChange} />
 
-        {/* Quick View Mode Pills */}
-        <div className="flex items-center gap-1 rounded border border-edgec bg-void/70 p-0.5">
-          {(['xray', 'standard', 'ct', 'mri'] as RenderingViewMode[]).map((vm) => (
-            <button
-              key={vm}
-              onClick={() => handleChangeViewMode(vm)}
-              className={`rounded px-2.5 py-1 font-mono text-[7.5px] font-semibold uppercase tracking-[0.14em] transition-all ${
-                viewMode === vm
-                  ? 'bg-synapse text-abyss shadow-sm'
-                  : 'text-mute hover:text-ink hover:bg-panel'
-              }`}
-            >
-              {vm === 'standard' ? 'Photoreal' : vm.toUpperCase()}
-            </button>
-          ))}
-        </div>
-
-        {/* Clock & Status */}
-        <div className="hidden flex-col items-end leading-tight lg:flex">
-          <span className="font-mono text-[9.5px] font-bold text-emerald-400">● LIVE 3D MEDICAL ATLAS</span>
-          <span className="font-mono text-[6.5px] uppercase tracking-[0.18em] text-mute">
-            Z-ANATOMY · HUMANOME ARCHITECTURE
-          </span>
-        </div>
-      </header>
-
-      {/* Main Workspace Grid */}
+      {/* Main Studio Viewport */}
       <div className="relative flex flex-1 overflow-hidden">
-        {/* Module Sidebar */}
+        {/* Left Vertical App Mode Rail */}
         <Sidebar mode={mode} onMode={setMode} />
 
-        {/* 3D WebGL Canvas Viewport */}
-        <div className="relative flex-1 overflow-hidden bg-[#100f0c]">
-          <div ref={containerRef} className="h-full w-full cursor-grab active:cursor-grabbing" />
+        {/* Central 3D Canvas Container */}
+        <div className="relative flex-1 bg-void/50">
+          <div ref={containerRef} className="h-full w-full" />
 
-          {/* 3D Floating HUD Tooltip */}
+          {/* Hover Tooltip HUD */}
           {hoverInfo && (
             <div
-              className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full rounded border border-synapse/40 bg-abyss/95 px-2.5 py-1.5 shadow-xl backdrop-blur-md"
-              style={{ left: hoverInfo.x, top: hoverInfo.y - 14 }}
+              className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-md border border-synapse/40 bg-abyss/90 px-3 py-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md"
+              style={{ left: hoverInfo.x, top: hoverInfo.y - 12 }}
             >
-              <span className="block font-display text-[10px] font-bold text-ink">{hoverInfo.name}</span>
-              <span className="block font-mono text-[6.5px] uppercase tracking-[0.14em] text-synapse">
-                {hoverInfo.system} · Click to inspect
+              <span className="block font-display text-[10px] font-bold text-ink">
+                {hoverInfo.name}
+              </span>
+              <span className="block font-mono text-[7px] uppercase tracking-[0.14em] text-synapse">
+                {hoverInfo.system}
               </span>
             </div>
           )}
@@ -306,15 +307,15 @@ export default function App() {
               <ZoomIn size={10} className="text-synapse" /> Scroll to Zoom
             </span>
             <span className="flex items-center gap-1">
-              <MousePointerClick size={10} className="text-synapse" /> Click any bone/organ/muscle to isolate
+              <MousePointerClick size={10} className="text-synapse" /> Click any organ or bone to focus
             </span>
           </div>
 
           {/* Active View Indicator Banner */}
-          <div className="pointer-events-none absolute left-3 top-3 z-10 flex items-center gap-2 rounded border border-edgec bg-abyss/85 px-3 py-1.5 backdrop-blur-md">
+          <div className="pointer-events-auto absolute left-3 top-3 z-10 flex items-center gap-2 rounded border border-edge bg-abyss/85 px-3 py-1.5 backdrop-blur-md">
             <Activity size={12} className="text-synapse animate-pulse" />
             <div>
-              <span className="block font-display text-[10px] font-bold text-ink uppercase">
+              <span className="block font-display text-[10px] font-bold uppercase text-ink">
                 {viewMode} Mode Active
               </span>
               <span className="block font-mono text-[6.5px] uppercase tracking-[0.14em] text-mute">
@@ -322,6 +323,58 @@ export default function App() {
               </span>
             </div>
           </div>
+
+          {/* Focused Organ Active Callout HUD on Canvas */}
+          {activeOrganObj && (
+            <div className="pointer-events-auto absolute bottom-4 right-4 z-20 flex max-w-sm flex-col gap-1.5 rounded-lg border border-synapse/60 bg-abyss/90 p-3 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-md">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded bg-synapse text-abyss">
+                    <activeOrganObj.icon size={13} />
+                  </div>
+                  <div>
+                    <span className="block font-display text-[11px] font-bold text-ink">
+                      {activeOrganObj.name}
+                    </span>
+                    <span className="block font-mono text-[6.5px] uppercase tracking-[0.12em] text-synapse">
+                      Target Locked · 3D Focused
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={handleResetCamera}
+                  className="rounded border border-edge bg-void px-2 py-0.5 font-mono text-[7px] text-mute hover:text-ink"
+                >
+                  Reset View
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-1 border-t border-edge/60 pt-1.5 font-mono text-[7.5px]">
+                <div>
+                  <span className="text-dim">Blood Supply: </span>
+                  <span className="text-mute truncate">{activeOrganObj.bloodSupply.split(' ')[0]}</span>
+                </div>
+                <div>
+                  <span className="text-dim">Innervation: </span>
+                  <span className="text-mute truncate">{activeOrganObj.innervation.split(' ')[0]}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 pt-1">
+                {(['xray', 'standard', 'ct', 'mri'] as RenderingViewMode[]).map((vm) => (
+                  <button
+                    key={vm}
+                    onClick={() => handleChangeViewMode(vm)}
+                    className={`rounded px-1.5 py-0.5 font-mono text-[6.5px] font-semibold uppercase ${
+                      viewMode === vm ? 'bg-synapse text-abyss' : 'border border-edge bg-void text-mute hover:text-ink'
+                    }`}
+                  >
+                    {vm === 'standard' ? 'Photoreal' : vm}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Dynamic Context Panel (Explorer / Signals / Scenarios / NeuroAI / Telemetry) */}
@@ -334,7 +387,9 @@ export default function App() {
               onChangeOpacity={handleChangeOpacity}
               viewMode={viewMode}
               onChangeViewMode={handleChangeViewMode}
-              selectedStructure={selectedStructure}
+              selectedOrganKey={selectedOrganKey}
+              onSelectOrgan={handleSelectOrgan}
+              onResetCamera={handleResetCamera}
               onAskNeuroAI={handleAskNeuroAI}
             />
           )}
