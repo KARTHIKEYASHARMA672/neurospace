@@ -52,6 +52,35 @@
 | ![09 Full Body Composite](./screenshots/09_3d_full_human_body_composite.png) | ![10 X-Ray Mode](./screenshots/10_3d_xray_radiological_hologram.png) |
 | *Seamless composite of all 6 Z-Anatomy layers: Skeleton, Muscular, Organs, Vascular, Nervous, and Skin.* | *Radiological depth mode rendering multi-layer translucent bone, vascular, and organ structures.* |
 
+### 🎨 Clinical Medical Illustration Reference Standards
+
+> 📖 *These publication-grade medical illustrations served as the anatomical reference blueprints for the 3D Z-Anatomy mesh isolation engines, ensuring 1:1 fidelity without missing a single coronary branch, sulcal wrinkle, or organ boundary.*
+
+| 01 — Heart & Coronary Perfusion Reference | 02 — Heart Internal Chambers & Papillary Muscles Reference |
+| :---: | :---: |
+| ![01 Heart Reference](./screenshots/01_image_reference_heart_exterior_coronary.jpg) | ![02 Heart Cutaway Reference](./screenshots/02_image_reference_heart_interior_cutaway.jpg) |
+| *Clinical anterior coronary view: Ascending aorta, LAD, and circumflex branches.* | *Coronal split cross-section: Left/Right ventricles, atria, and atrioventricular valves.* |
+
+| 03 — Brain & Nervous Architecture Reference | 04 — Lungs & Tracheobronchial Tree Reference |
+| :---: | :---: |
+| ![03 Brain Reference](./screenshots/03_image_reference_brain_nervous_system.jpg) | ![04 Lungs Reference](./screenshots/04_image_reference_respiratory_lungs_tree.jpg) |
+| *Cerebral cortex gyri/sulci, cerebellum folia, brainstem, and spinal cord.* | *Trachea, cartilaginous rings, primary bronchi, and bilateral 5 pulmonary lobes.* |
+
+| 05 — Liver, Gallbladder & Portal System Reference | 06 — Kidneys & Excretory Nephron Reference |
+| :---: | :---: |
+| ![05 Liver Reference](./screenshots/05_image_reference_liver_biliary_system.jpg) | ![06 Kidneys Reference](./screenshots/06_image_reference_kidneys_urinary_system.jpg) |
+| *Hepatic parenchyma, Couinaud segmentation, and gallbladder storage.* | *Bilateral retroperitoneal kidneys, suprarenal adrenal caps, ureters, and bladder.* |
+
+| 07 — Skeletal Articulated Framework Reference | 08 — Muscular System & Kinetic Chains Reference |
+| :---: | :---: |
+| ![07 Skeleton Reference](./screenshots/07_image_reference_skeletal_system.jpg) | ![08 Muscular Reference](./screenshots/08_image_reference_muscular_system.jpg) |
+| *206 articulated bones across axial cranium, spine, and appendicular extremities.* | *Striated superficial and deep muscular kinetic layers.* |
+
+| 09 — Full Body Multi-System Reference | 10 — Digestive Stomach & Pancreas Reference |
+| :---: | :---: |
+| ![09 Full Body Reference](./screenshots/09_image_reference_fullbody_composite.jpg) | ![10 Digestive Reference](./screenshots/10_image_reference_digestive_stomach_system.jpg) |
+| *Multi-system sagittal composite across all 6 human bodily layers.* | *J-shaped stomach, fundus, pyloric antrum, pancreas, and duodenal C-loop.* |
+
 ---
 
 ## 🫀 Complete Human Body Systems & Organs Index
